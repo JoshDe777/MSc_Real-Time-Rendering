@@ -1,0 +1,39 @@
+Light grid system ideated using ChatGPT
+- ChatGPT was also involved throughout the project to help pinpoint issues during debugging, and suggest targeted fixes.
+
+- Lighting shaders made in part using the tutorial "OpenGL with C++ 09: Blinn Phong Lighting" by GetIntoGameDev (https://youtu.be/wlafIxgiuRY?si=tcnuTEgUJ96BzNWL)
+- Assimp support established using assimp's documentation.
+- 3D Mesh inclusion made primarily using resources made available on blackboard, on top of the existing systems.
+
+### External Assets:
+- [Minotaur asset modified from "Hell Minotaur" asset made by VMMI](https://sketchfab.com/3d-models/hell-minotaur-ca4d8d67d5404b1dafdda0ecbba7aad9)
+- Textures from PolyHaven:
+    - 'Gravelly Sand' texture from [PolyHaven](https://polyhaven.com/a/gravelly_sand) - Dario Barresi
+    - 'Wood Inlaid Stone Wall' texture from [PolyHaven](https://polyhaven.com/a/wood_inlaid_stone_wall) - Amal Kumar
+
+The entire system builds on the work made during my GameLab III module in my undergraduate studies. A finished state of the software before start on this project can be found at https://github.com/JoshDe777/gamelab3-ocean_outlaws
+
+For transparency, a commit history (and the full source code) is available at https://github.com/JoshDe777/MSc-CompGraphics
+
+List of previously existing scripts modified in the making of this project:
+- RenderingSystem.h/.cpp -> 3D Mesh support, Lighting framework, other, minor changes
+- SceneGraphUpdater.cpp -> Fixes on previously 2D-"optimized" systems
+- Transform.h/.cpp -> Fixes on previously 2D-"optimized" (or plain broken) systems
+- ResourceManager.cpp -> Assimp 3D asset import support, Material system 
+- Renderer.cpp -> Transition to material system
+- Texture2D.cpp -> multi-texture support
+- Components.h -> updated components list
+- Utilities.h -> updated utility classes list
+- Shader.h/.cpp -> More uniform value setting interface
+- Camera.h/.cpp -> Inclusion of perspective projection + ability to switch between viewports
+- Vector3.h/.cpp -> compatibility with assimp classes
+- Input.h/.cpp -> Mouse tracking
+
+List of entirely new files since working on this project (possibly non-exhaustive):
+- Any file in root/app/
+- assets/shaders/fragmentShader3D.frag
+- assets/shaders/betterVertexShader.vert
+- PointLight.h/.cpp
+- Mesh3D.h/.cpp
+- PrimitiveMesh3D.h/.cpp
+- Material.h/.cpp

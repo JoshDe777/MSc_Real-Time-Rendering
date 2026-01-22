@@ -50,20 +50,20 @@ struct Entry{
             glGenVertexArrays(1, &i);
 
         // generate default shader (mesh2D & lines)
-        ResourceManager::GenerateShaderFromFiles("shaders/vertexShader.vert",
-                                                 "shaders/fragmentShader.frag",
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
+                                                 "shaders/frag-material_debug_unlit.frag",
                                                  "Default Shader");
         // generate default sprite shader
-        ResourceManager::GenerateShaderFromFiles( "shaders/betterVertexShader.vert",
-                                                  "shaders/spriteFragmentShader.frag",
+        ResourceManager::GenerateShaderFromFiles( "shaders/vert-shader3D.vert",
+                                                  "shaders/frag-sprite_unlit.frag",
                                                   "Sprite Shader");
         // generate ui sprite shader
-        ResourceManager::GenerateShaderFromFiles("shaders/betterVertexShader.vert",
-                                                 "shaders/spriteFragmentShader.frag",
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-sprite_unlit.frag",
                                                  "UI Shader");
         // generate 3D shader
-        ResourceManager::GenerateShaderFromFiles("shaders/betterVertexShader.vert",
-                                                 "shaders/fragmentShader3D.frag",
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-blinn_phong.frag",
                                                  "3D Shader");
 
         glDisable(GL_CULL_FACE);

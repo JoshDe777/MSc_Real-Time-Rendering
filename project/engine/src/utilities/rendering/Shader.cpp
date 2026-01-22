@@ -67,9 +67,9 @@ namespace EisEngine::rendering {
         glUniform1f(uniformLocation, val);
     }
 
-    const fs::path Shader::defaultVertexShaderPath = "shaders/vertexShader.vert";
-    const fs::path Shader::defaultFragmentShaderPath = "shaders/fragmentShader.frag";
+    const fs::path Shader::defaultVertexShaderPath = "shaders/vert-no_normals.vert";
+    const fs::path Shader::defaultFragmentShaderPath = "shaders/frag-material_debug_unlit.frag";
     const fs::path Shader::spriteVertexShaderPath = "shaders/spriteVertexShader.vert";
-    const fs::path Shader::spriteFragmentShaderPath = "shaders/spriteFragmentShader.frag";
+    const fs::path Shader::spriteFragmentShaderPath = "shaders/frag-sprite_unlit.frag";
     const fs::path Shader::uiVertexShaderPath = "shaders/uiVertexShader.vert";
 }

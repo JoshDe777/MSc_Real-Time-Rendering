@@ -28,15 +28,16 @@ namespace RTR {
 
         // create child entity with point light features...
         auto lightEntity = game.entityManager.createEntity("light");
-        auto mat = ResourceManager::GetMaterialInstance("default");
+        lightTransform = static_cast<const shared_ptr<Transform>>(lightEntity.transform);
+        mat = ResourceManager::GetMaterialInstance("default");
         mat->SetEmission(Vector3::one);
         mat->SetIntensity(intensity);
         lightEntity.AddComponent<Renderer>(nullptr, mat.get());
-        lightEntity.AddComponent<PointLight>(mat.get());
+        component = static_cast<shared_ptr<PointLight>>(&lightEntity.AddComponent<PointLight>(mat.get()));
 
         // ... & offset in y direction by orbitDist.
-        lightEntity.transform->SetParent(entity->transform);
-        lightEntity.transform->SetLocalPosition(Vector3(0, orbitDist, 0));
+        lightTransform->SetParent(entity->transform);
+        lightTransform->SetLocalPosition(Vector3(0, 0, 1));
 
         // orbit every frame.
         game.onUpdate.addListener([&](Game& game){
@@ -45,6 +46,6 @@ namespace RTR {
     }
 
     void Light::Orbit() {
-        entity->transform->Rotate(Vector3(orbitStepPerSec * Time::deltaTime, 0, 0));
+        entity->transform->Rotate(Vector3(0 * Time::deltaTime, 0, 0));
     }
 }

@@ -24,6 +24,8 @@ namespace EisEngine::systems {
         void Draw();
         /// \n Adds an entity as an LOD loader object.
         static void MarkAsLoader(Entity* ptr);
+        /// \n changes the specular factor in the scene for the Blinn-Phong Shader.
+        static void SetSpecularFactor(const float& val);
     private:
         /// \n A pointer to the active camera object.
         Camera* camera = nullptr;
@@ -34,5 +36,6 @@ namespace EisEngine::systems {
         std::unordered_map<Vector2, std::vector<int>, GridCoordHashMap> LightGrid = {};
         void BuildLightGrid();
         std::vector<int> QueryNearbyLights(const glm::vec3& objectPos);
+        static float specularFactor;
     };
 }

@@ -8,10 +8,10 @@
 #define MAX_LIGHTS 3
 #define DIST_THRESHOLD 5.0f
 #define AMBIENT_FACTOR 0.15f
-#define SPECULAR_FACTOR 100.0f
 
 namespace EisEngine::systems {
 // helper functions:
+float RenderingSystem::specularFactor = 1.0f;
 
 struct Entry{
     PointLight* L;
@@ -38,6 +38,8 @@ struct Entry{
         Loaders.push_back(ptr);
     }
 
+    void RenderingSystem::SetSpecularFactor(const float &val) { specularFactor = val;}
+
     RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
         camera = &engine.camera;
         if(!camera)
@@ -58,13 +60,13 @@ struct Entry{
                                                   "shaders/frag-sprite_unlit.frag",
                                                   "Sprite Shader");
         // generate ui sprite shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
                                                  "shaders/frag-sprite_unlit.frag",
                                                  "UI Shader");
         // generate 3D shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-blinn_phong.frag",
-                                                 "3D Shader");
+                                                 "Blinn-Phong Shader");
 
         glDisable(GL_CULL_FACE);
     }
@@ -143,9 +145,9 @@ struct Entry{
 
         #pragma region 3D rendering
         // Mesh3D rendering
-        activeShader = ResourceManager::GetShader("3D Shader");
+        activeShader = ResourceManager::GetShader("Blinn-Phong Shader");
         activeShader->setFloat("ambient", AMBIENT_FACTOR);
-        activeShader->setFloat("specular", SPECULAR_FACTOR);
+        activeShader->setFloat("specular", specularFactor);
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
             glBindVertexArray(VAO[i++]);
             activeShader->Apply(camera);
@@ -168,12 +170,12 @@ struct Entry{
                     renderer->ApplyData(*activeShader);
 
                 auto pos = mesh.entity()->transform->GetGlobalPosition();
-                pos.y = 2;
+                //pos.y = 2;
                 float lodDist = 100000000000000000.0f;
                 if(!Loaders.empty())
                     for(auto obj : Loaders){
                         auto objPos = obj->transform->GetGlobalPosition();
-                        objPos.y = 2;
+                        //objPos.y = 2;
                         lodDist = std::min(lodDist, Vector3::Distance(objPos, pos));
                     }
 

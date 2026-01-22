@@ -32,16 +32,15 @@ out vec4 fragColor;
 
 vec3 calculateFragColor(vec4 base){
     vec3 result = ambient * base.xyz;
+    vec3 normal = normalize(fragNormal);
     // apply diffuse and specular changes for each light affecting the object.
     for(int i = 0; i < nLights; i++){
-        vec3 normal = normalize(fragNormal);
         PointLight light = lights[i];
         // diffuse:
         vec3 lightDir = normalize(light.pos - fragPos);
         // calculate distance between light src and obj.
         float dist = max(distance(light.pos, fragPos), 0.01);
         float attenuation = light.I / (dist*dist);
-        //
         result += light.emission * base.xyz * max(0, dot(normal, lightDir)) * attenuation;
 
         // specular:

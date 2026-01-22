@@ -42,6 +42,9 @@ namespace RTR {
             DEBUG_RUNTIME_ERROR("Couldn't find Renderer on Teapot!")
 
         renderer = static_cast<const shared_ptr<Renderer>>(temp);
+        renderer->material->SetDiffuse(Color::red);
+        renderer->material->SetMetallic(0.7f);
+        renderer->material->Print();
 
         game.onUpdate.addListener([&](Game& game){
             rotate();

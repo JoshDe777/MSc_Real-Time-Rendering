@@ -4,10 +4,12 @@ int n_teapots = 3;
 
 namespace RTR {
     inline Vector3 estimatePosition(const int& index){
-        float x = ceil((float) index / 2) * pow(-1, index);
-        auto y = (float) pow(index, 2) * 0.5f;
-        auto z = - (float) pow(index, 2);
-        return Vector3(x, y, z);
+        if(index == 0)
+            return Vector3(0, -1, 0);
+        else if (index == 1)
+            return Vector3(-7, 1, -1);
+        else
+            return Vector3(7, 1, 1);
     }
 
     Simulation::Simulation(const std::string& renderer) : Game("RTR Simulation") {
@@ -15,9 +17,10 @@ namespace RTR {
         camera.transform->SetGlobalPosition(worldOffset);
         for(int i = 0; i < n_teapots; i++){
             pots.push_back(make_shared<Teapot>(*this));
-            pots[i]->entity->transform->SetGlobalPosition(estimatePosition(i));
+            auto pos = estimatePosition(i);
+            pots[i]->entity->transform->SetGlobalPosition(pos);
             RenderingSystem::MarkAsLoader(pots[i]->entity.get());
-            lights.push_back(make_shared<Light>(*this, pots[i]->entity->transform, 1.5f));
+            lights.push_back(make_shared<Light>(*this, pots[i]->entity->transform, 2.0f));
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);

@@ -57,6 +57,8 @@ namespace EisEngine::systems {
         void SetCameraMode(const CameraMode& newMode);
         /// \n [Debug function] outputs the direction towards which the camera is looking.
         Vector3 viewDirection() const;
+        /// \n Rotates the camera to look at a given point.
+        void LookAt(const Vector3& pos) const;
     private:
         /// \n A pointer to the entity assigned to this object.
         Entity *entity;

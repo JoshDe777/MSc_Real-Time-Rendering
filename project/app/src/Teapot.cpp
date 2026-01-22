@@ -18,9 +18,7 @@ namespace RTR {
     Teapot::Teapot(Game& game) {
 
         auto tempEntity = ResourceManager::Load3DObject(game,"3d-objects/utah_teapot.obj");
-        tempEntity->transform->SetLocalRotation(GetRandomOrbitAxis());
 
-        // this isn't working. Try debugging the Load3DObject sequence again and find the correct depth of object referencing!
         for(auto child : tempEntity->transform->getChildren()){
             auto temp = child->entity();
             auto tempRenderer = temp->GetComponent<Renderer>();
@@ -37,6 +35,9 @@ namespace RTR {
                 }
         }
 
+        entity->transform->parent()->SetLocalRotation(GetRandomOrbitAxis());
+        entity->transform->SetLocalPosition(Vector3::zero);
+
         auto temp = entity->GetComponent<Renderer>();
         if(!temp)
             DEBUG_RUNTIME_ERROR("Couldn't find Renderer on Teapot!")
@@ -44,7 +45,6 @@ namespace RTR {
         renderer = static_cast<const shared_ptr<Renderer>>(temp);
         renderer->material->SetDiffuse(Color::red);
         renderer->material->SetMetallic(0.7f);
-        renderer->material->Print();
 
         game.onUpdate.addListener([&](Game& game){
             rotate();

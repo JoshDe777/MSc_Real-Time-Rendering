@@ -13,7 +13,7 @@ namespace RTR {
         shared_ptr<Entity> light_source = nullptr;
         std::vector<shared_ptr<Teapot>> pots = {};
         std::vector<shared_ptr<Light>> lights = {};
-        Vector3 worldOffset = Vector3(0, 0, 8);
-        float spec = 2.0f;
+        Vector3 worldOffset = Vector3(0, -2, 10);
+        float spec = 4.0f;
     };
 }

@@ -2,7 +2,21 @@
 #include "engine/systems/Camera.h"
 #include "engine/Game.h"
 
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/quaternion.hpp>
+
 namespace EisEngine::systems {
+    inline Vector3 ConvertMatrixToEuler(const glm::mat4& mat) {
+        glm::vec3 euler;
+        glm::extractEulerAngleYXZ(mat, euler.y, euler.x, euler.z);
+
+        return Vector3(
+                Math::RadiansToDegrees(euler.x),
+                Math::RadiansToDegrees(euler.y),
+                Math::RadiansToDegrees(euler.z)
+        );
+    }
+
     Camera::Camera(EisEngine::Game &engine, const Vector2& screenDimensions, CameraMode cameraMode):
     System(engine),
     m_screenWidth((int) screenDimensions.x),
@@ -39,6 +53,13 @@ namespace EisEngine::systems {
 
     Vector3 Camera::viewDirection() const {
         return transform->Forward();
+    }
+
+    void Camera::LookAt(const EisEngine::Vector3 &pos) const {
+        auto q = glm::quatLookAt((glm::vec3) (pos - transform->GetGlobalPosition()).normalized(),
+                                 (glm::vec3) Vector3::up);
+        auto res = Vector3(eulerAngles(q));
+        transform->SetLocalRotation(res);
     }
 
     glm::mat4 Camera::GetVPMatrix() {

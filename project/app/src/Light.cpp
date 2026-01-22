@@ -46,6 +46,6 @@ namespace RTR {
     }
 
     void Light::Orbit() {
-        entity->transform->Rotate(Vector3(0 * Time::deltaTime, 0, 0));
+        entity->transform->Rotate(Vector3(orbitStepPerSec * Time::deltaTime, 0, 0));
     }
 }

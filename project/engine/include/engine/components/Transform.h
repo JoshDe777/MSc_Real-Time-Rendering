@@ -91,11 +91,11 @@ namespace EisEngine{
 
             // All transform::Direction() functions assume objects are created facing negative Z.
             /// \n Calculates the direction to the right hand side of an object, assuming it started facing negative Z.
-            [[nodiscard]] Vector3 Right() const { return Vector3::right.Rotate(localRotation);}
+            [[nodiscard]] Vector3 Right() const { return Vector3::right.Rotate(localRotation).normalized();}
             /// \n Calculates the upwards direction of an object, assuming it started facing negative Z.
-            [[nodiscard]] Vector3 Up() const { return Vector3::up.Rotate(localRotation);}
+            [[nodiscard]] Vector3 Up() const { return Vector3::up.Rotate(localRotation).normalized();}
             /// \n Calculates the forwards direction of an object, assuming it started facing negative Z.
-            [[nodiscard]] Vector3 Forward() const { return Vector3::forward.Rotate(localRotation);}
+            [[nodiscard]] Vector3 Forward() const { return Vector3::forward.Rotate(localRotation).normalized();}
         private:
             /// \n Adds a child Transform.
             void AddChild(Transform *transform);

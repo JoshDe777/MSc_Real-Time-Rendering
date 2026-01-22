@@ -37,6 +37,10 @@ namespace EisEngine::systems {
         nearClip = mode == PERSPECTIVE ? 0.1f : -1;
     }
 
+    Vector3 Camera::viewDirection() const {
+        return transform->Forward();
+    }
+
     glm::mat4 Camera::GetVPMatrix() {
         auto view = CalculateViewMatrix();
         auto projection = GetProjectionMatrix();

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(minotaurs-maze)
+project(rtr-project)
 
 set(CMAKE_CXX_STANDARD 17)
 

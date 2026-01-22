@@ -55,6 +55,8 @@ namespace EisEngine::systems {
         void SetFOV(const float& val) {fov = val;}
         /// \n Switches camera mode to the requested style.
         void SetCameraMode(const CameraMode& newMode);
+        /// \n [Debug function] outputs the direction towards which the camera is looking.
+        Vector3 viewDirection() const;
     private:
         /// \n A pointer to the entity assigned to this object.
         Entity *entity;

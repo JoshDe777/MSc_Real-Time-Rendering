@@ -1,6 +1,8 @@
 #include "Simulation.h"
 
 int n_teapots = 3;
+std::vector<std::string> shaders = {"Blinn-Phong", "Cook-Torrance"};
+int shaderIndex = 1;
 
 namespace RTR {
     inline Vector3 estimatePosition(const int& index){
@@ -24,6 +26,7 @@ namespace RTR {
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
+        RenderingSystem::SetActiveShader(shaders[shaderIndex]);
         // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
     }
 }

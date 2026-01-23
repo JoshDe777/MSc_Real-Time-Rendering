@@ -12,6 +12,12 @@
 namespace EisEngine::systems {
 // helper functions:
 float RenderingSystem::specularFactor = 1.0f;
+const std::string RenderingSystem::defaultShader = "Blinn-Phong";
+std::string RenderingSystem::active3DShader = "Blinn-Phong";
+const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
+        {"Blinn-Phong", "Blinn-Phong Shader"},
+        {"Cook-Torrance", "Cook-Torrance Shader"}
+};
 
 struct Entry{
     PointLight* L;
@@ -40,7 +46,18 @@ struct Entry{
 
     void RenderingSystem::SetSpecularFactor(const float &val) { specularFactor = val;}
 
+    void RenderingSystem::SetActiveShader(const std::string &shaderName) {
+        for(const auto& pair : shaderNameDict)
+            if(shaderName == pair.first){
+                active3DShader = shaderName;
+                return;
+            }
+        DEBUG_WARN("Attempted to set shader to invalid value [" + shaderName + "].")
+    }
+
     RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
+        SetActiveShader("Blinn-Phong");
+
         camera = &engine.camera;
         if(!camera)
             DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
@@ -67,6 +84,10 @@ struct Entry{
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-blinn_phong.frag",
                                                  "Blinn-Phong Shader");
+        // generate 3D shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-cook_torrance.frag",
+                                                 "Cook-Torrance Shader");
 
         glDisable(GL_CULL_FACE);
     }

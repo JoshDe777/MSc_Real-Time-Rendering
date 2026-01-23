@@ -15,7 +15,8 @@ namespace EisEngine {
         shader.setVector("diffuse", diffuse);
         shader.setFloat("alpha", opacity);
         shader.setFloat("tiling", tiling);
-        shader.setFloat("shiny", metallic * (1 - roughness));
+        shader.setFloat("metallic", metallic);
+        shader.setFloat("roughness", roughness);
     }
 
     void Material::Print() {

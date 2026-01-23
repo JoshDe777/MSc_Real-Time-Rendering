@@ -26,16 +26,31 @@ namespace EisEngine::systems {
         static void MarkAsLoader(Entity* ptr);
         /// \n changes the specular factor in the scene for the Blinn-Phong Shader.
         static void SetSpecularFactor(const float& val);
+        /// \n Switches the shader for 3D objects to the requested shader.
+        static void SetActiveShader(const std::string& shaderName);
     private:
         /// \n A pointer to the active camera object.
         Camera* camera = nullptr;
         /// \n VAO array storing a VAO for each type of mesh in order: Mesh2D, Line, Mesh3D, SpriteMesh, uiMesh.
         std::array<GLuint, 5> VAO;
-        GLuint FBO;
+        /// \n A list of entities enabling other entities in a certain radius of them to be lit.
         static std::vector<Entity*> Loaders;
+        /// \n A reference of Point Lights by approximate position in world 2D (x, z) space.
         std::unordered_map<Vector2, std::vector<int>, GridCoordHashMap> LightGrid = {};
+        /// \n Collects all Point Lights in the scene and compiles them to a usable grid.
         void BuildLightGrid();
+        /// \n Checks the surroundings of an object for effecting light sources.
         std::vector<int> QueryNearbyLights(const glm::vec3& objectPos);
+        /// \n [Blinn-Phong] The specular factor determining how sharp the specular lobe is.\n
+        /// The higher this value, the slimmer the lobe.
         static float specularFactor;
+        /// \n The name (human-readable) of the default shader for the rendering system.\n
+        /// Must be a key value for a shaderNameDict entry.
+        static const std::string defaultShader;
+        /// \n The name (human-readable) of the currently active 3D shader for the rendering system.\n
+        /// Must be a key value for a shaderNameDict entry.
+        static std::string active3DShader;
+        /// \n A dictionary linking shader names to the name of their corresponding shader object in the ResourceManager.
+        static const std::unordered_map<std::string, std::string> shaderNameDict;
     };
 }

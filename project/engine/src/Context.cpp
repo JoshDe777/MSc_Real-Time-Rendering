@@ -1,4 +1,8 @@
 #include <stdexcept>
+#include <gui/imgui.h>
+#include <gui/backends/imgui_impl_glfw.h>
+#include <gui/backends/imgui_impl_opengl3.h>
+
 #include "engine/Context.h"
 #include "engine/utilities/Debug.h"
 
@@ -35,10 +39,21 @@ namespace EisEngine::ctx {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
+    void Context::LoadImGUI() {
+        // Initialize ImGui
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGui::StyleColorsDark();
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplOpenGL3_Init("#version 330");
+    }
+
     Context::Context(const std::string &title) {
         InitializeGLFW();
         createWindow(title);
         LoadGLAD();
+        LoadImGUI();
     }
 
     void Context::run(const Context::Callback& update) {
@@ -52,5 +67,11 @@ namespace EisEngine::ctx {
         }
     }
 
-    Context::~Context() { glfwTerminate();}
+    Context::~Context() {
+        glfwTerminate();
+        // Cleanup ImGui
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 }

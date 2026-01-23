@@ -28,5 +28,39 @@ namespace RTR {
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetActiveShader(shaders[shaderIndex]);
         // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
+
+        onAfterUpdate.addListener([&](Game& game){
+            DisplayUI();
+            UpdateWorld();
+        });
+    }
+
+    void Simulation::DisplayUI() {
+        // Start ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // ImGui UI Window
+        ImGui::Begin("Lighting Controls");
+        ImGui::Text("Adjust lighting parameters:");
+        ImGui::Separator();
+        ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 2.0f);
+        ImGui::SliderFloat("Shininess", &shiny, 1.0f, 128.0f);
+        ImGui::Separator();
+        ImGui::ColorEdit3("Light Color", &emission.x);
+        // Intensity slider?
+        ImGui::End();
+    }
+
+    void Simulation::UpdateWorld() {
+        for(const auto& teapot: pots){
+            // set roughness to 1-shiny
+        }
+        for(const auto& light: lights){
+            // set emission color
+        }
+        RenderingSystem::SetSpecularFactor(spec);
+        RenderingSystem::SetActiveShader(shaders[shaderIndex]);
     }
 }

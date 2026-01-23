@@ -44,7 +44,8 @@ namespace RTR {
 
         renderer = static_cast<const shared_ptr<Renderer>>(temp);
         renderer->material->SetDiffuse(Color::red);
-        renderer->material->SetMetallic(0.7f);
+        renderer->material->SetMetallic(1.0f);
+        renderer->material->SetRoughness(0.7f);
 
         game.onUpdate.addListener([&](Game& game){
             rotate();

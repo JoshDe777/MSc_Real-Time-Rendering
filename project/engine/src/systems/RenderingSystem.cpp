@@ -1,6 +1,8 @@
 #include "engine/systems/RenderingSystem.h"
 #include "engine/Game.h"
 #include "engine/Components.h"
+#include "gui/imgui.h"
+#include "gui/imgui_impl_opengl3.h"
 
 #include <algorithm>
 
@@ -272,6 +274,9 @@ struct Entry{
                 mesh.draw();
             });
         }
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // return if no UI sprites to render
         if(uiSprites.empty())

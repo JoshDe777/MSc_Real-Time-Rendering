@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <gui/imgui.h>
-#include <gui/backends/imgui_impl_glfw.h>
-#include <gui/backends/imgui_impl_opengl3.h>
+#include <gui/imgui_impl_glfw.h>
+#include <gui/imgui_impl_opengl3.h>
 
 #include "engine/Context.h"
 #include "engine/utilities/Debug.h"
@@ -61,7 +61,11 @@ namespace EisEngine::ctx {
         while(!glfwWindowShouldClose(window)) {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
             update(*this);
+            ImGui::EndFrame();
             glfwPollEvents();
             glfwSwapBuffers(window);
         }

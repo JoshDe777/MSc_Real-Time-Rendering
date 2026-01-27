@@ -9,8 +9,8 @@
 #include "engine/Utilities.h"
 #include "engine/Game.h"
 #include "gui/imgui.h"
-#include "gui/backends/imgui_impl_opengl3.h"
-#include "gui/backends/imgui_impl_glfw.h"
+#include "gui/imgui_impl_opengl3.h"
+#include "gui/imgui_impl_glfw.h"
 
 using namespace EisEngine;
 using Entity = EisEngine::ecs::Entity;

@@ -42,13 +42,22 @@ namespace RTR {
         // ImGui::SetNextWindowSize(ImVec2(1000, 1000));
         // ImGui UI Window
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("Adjust lighting parameters:");
         ImGui::Separator();
+        ImGui::SeparatorText("Shininess Parameters");
         ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 10.0f);
-        ImGui::SliderFloat("Shininess", &shiny, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &shiny, 0.0f, 1.0f);
         ImGui::Separator();
+        ImGui::SeparatorText("Light Parameters");
         ImGui::ColorEdit3("Light Color", &emission.x);
         ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
+        ImGui::Separator();
+        ImGui::SeparatorText("Shader Selection");
+        if(ImGui::Button("Blinn-Phong"))
+            shaderIndex = 0;
+        if(ImGui::Button("Cook-Torrance"))
+            shaderIndex = 1;
+        if(ImGui::Button("Toon"))
+            DEBUG_INFO("Not Implemented")
         // Intensity slider?
         ImGui::End();
         ImGui::Render();

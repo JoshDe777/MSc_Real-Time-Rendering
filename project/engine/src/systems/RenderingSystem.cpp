@@ -1,8 +1,6 @@
 #include "engine/systems/RenderingSystem.h"
 #include "engine/Game.h"
 #include "engine/Components.h"
-#include "gui/imgui.h"
-#include "gui/imgui_impl_opengl3.h"
 
 #include <algorithm>
 
@@ -168,12 +166,12 @@ struct Entry{
 
         #pragma region 3D rendering
         // Mesh3D rendering
-        activeShader = ResourceManager::GetShader("Blinn-Phong Shader");
+        activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
+        activeShader->Apply(camera);
         activeShader->setFloat("ambient", AMBIENT_FACTOR);
         activeShader->setFloat("specular", specularFactor);
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
             glBindVertexArray(VAO[i++]);
-            activeShader->Apply(camera);
             engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){
                 auto model = mesh.entity()->transform->GetModelMatrix();
                 activeShader->setMatrix("model", model);

@@ -275,9 +275,6 @@ struct Entry{
             });
         }
 
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         // return if no UI sprites to render
         if(uiSprites.empty())
             return;

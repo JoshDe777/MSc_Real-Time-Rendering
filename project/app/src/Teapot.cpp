@@ -54,7 +54,7 @@ namespace RTR {
 
     void Teapot::setShininess(const float &val) {
         auto endval = std::clamp(val, 0.0f, 1.0f);
-        renderer->material->SetMetallic(endval);
+        renderer->material->SetRoughness(endval);
     }
 
     void Teapot::rotate() {

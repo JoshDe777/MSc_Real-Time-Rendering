@@ -29,36 +29,39 @@ namespace RTR {
         RenderingSystem::SetActiveShader(shaders[shaderIndex]);
         // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
 
-        onAfterUpdate.addListener([&](Game& game){
+        onUpdate.addListener([&](Game& game){
             DisplayUI();
             UpdateWorld();
         });
     }
 
     void Simulation::DisplayUI() {
-        // Start ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        // ImGui::SetNextWindowSize(ImVec2(1000, 1000));
         // ImGui UI Window
-        ImGui::Begin("Lighting Controls");
+        ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Text("Adjust lighting parameters:");
         ImGui::Separator();
-        ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 2.0f);
-        ImGui::SliderFloat("Shininess", &shiny, 1.0f, 128.0f);
+        ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 10.0f);
+        ImGui::SliderFloat("Shininess", &shiny, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::ColorEdit3("Light Color", &emission.x);
+        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
         // Intensity slider?
         ImGui::End();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     void Simulation::UpdateWorld() {
         for(const auto& teapot: pots){
-            // set roughness to 1-shiny
+            teapot->setShininess(1 - shiny);
         }
         for(const auto& light: lights){
-            // set emission color
+            light->SetColor(emission);
+            light->SetIntensity(intensity);
         }
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetActiveShader(shaders[shaderIndex]);

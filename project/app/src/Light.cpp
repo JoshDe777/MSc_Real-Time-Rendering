@@ -48,4 +48,12 @@ namespace RTR {
     void Light::Orbit() {
         entity->transform->Rotate(Vector3(orbitStepPerSec * Time::deltaTime, 0, 0));
     }
+
+    void Light::SetColor(const Vector3 &em) {
+        mat->SetEmission(em);
+    }
+
+    void Light::SetIntensity(const float &i) {
+        component->SetIntensity(i);
+    }
 }

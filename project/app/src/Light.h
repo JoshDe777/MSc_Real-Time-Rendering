@@ -9,6 +9,8 @@ namespace RTR {
         friend Simulation;
     public:
         explicit Light(Game& game, Transform* reference, const float& orbitDist);
+        void SetColor(const Vector3& em);
+        void SetIntensity(const float& i);
     private:
         shared_ptr<Entity> entity;
         shared_ptr<Transform> lightTransform;

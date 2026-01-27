@@ -17,6 +17,7 @@ namespace RTR {
         float spec = 4.0f;
         float shiny = 1.0f;
         Vector3 emission = Vector3::one;
+        float intensity = 1.0f;
 
         void DisplayUI();
         void UpdateWorld();

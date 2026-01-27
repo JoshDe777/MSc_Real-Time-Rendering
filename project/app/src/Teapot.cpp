@@ -52,7 +52,7 @@ namespace RTR {
         });
     }
 
-    void Teapot::setShininess(const float &val) {
+    void Teapot::setRoughness(const float &val) {
         auto endval = std::clamp(val, 0.0f, 1.0f);
         renderer->material->SetRoughness(endval);
     }

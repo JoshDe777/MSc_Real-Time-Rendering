@@ -6,7 +6,7 @@ namespace RTR {
     class Teapot {
     public:
         explicit Teapot(Game &game);
-        void setShininess(const float& val);
+        void setRoughness(const float& val);
         shared_ptr<Entity> entity;
     private:
         shared_ptr<Renderer> renderer;

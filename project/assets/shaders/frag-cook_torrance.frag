@@ -69,7 +69,10 @@ vec3 calculateFragColor(vec4 base){
         float g2 = (2 * angle * brightness) / m;
         float G = min(1, min(g1, g2));
 
-        float ks = (F * D * G) / (PI * brightness * g);
+        float denumerator = PI * brightness * g;
+        if(denumerator == 0)
+            denumerator = 0.001;
+        float ks = (F * D * G) / denumerator;
 
         result += light.emission * ks /* attenuation*/;
     }

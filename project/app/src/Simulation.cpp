@@ -45,7 +45,7 @@ namespace RTR {
         ImGui::Separator();
         ImGui::SeparatorText("Shininess Parameters");
         ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 10.0f);
-        ImGui::SliderFloat("Roughness", &shiny, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SeparatorText("Light Parameters");
         ImGui::ColorEdit3("Light Color", &emission.x);
@@ -66,7 +66,9 @@ namespace RTR {
 
     void Simulation::UpdateWorld() {
         for(const auto& teapot: pots){
-            teapot->setShininess(1 - shiny);
+            if (roughness > 1.0f)
+                roughness = 0.999f;
+            teapot->setRoughness(roughness);
         }
         for(const auto& light: lights){
             light->SetColor(emission);

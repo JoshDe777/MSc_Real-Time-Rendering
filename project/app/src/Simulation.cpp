@@ -66,8 +66,8 @@ namespace RTR {
 
     void Simulation::UpdateWorld() {
         for(const auto& teapot: pots){
-            if (roughness > 1.0f)
-                roughness = 0.999f;
+            if (roughness == 0.0f)
+                roughness = 0.001f;
             teapot->setRoughness(roughness);
         }
         for(const auto& light: lights){

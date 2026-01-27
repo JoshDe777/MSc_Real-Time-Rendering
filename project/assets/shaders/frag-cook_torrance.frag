@@ -60,6 +60,7 @@ vec3 calculateFragColor(vec4 base){
         float r1 = 1 / (4 * roughness * roughness * pow(angle, 4));
         float r2 = 0;
         if (angle > 0.001)
+            // need alt value if roughness = 0
             r2 = (angle * angle - 1) / (roughness * roughness * angle * angle);
         float D = r1 * exp(r2);
 
@@ -74,7 +75,7 @@ vec3 calculateFragColor(vec4 base){
             denumerator = 0.001;
         float ks = (F * D * G) / denumerator;
 
-        result += light.emission * ks /* attenuation*/;
+        result += brightness * light.emission * ks * attenuation;
     }
     return result;
 }

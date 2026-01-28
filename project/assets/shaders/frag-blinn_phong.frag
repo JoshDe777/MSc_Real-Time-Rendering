@@ -1,6 +1,6 @@
 #version 460 core
 
-#define MAX_LIGHTS 3
+#define MAX_LIGHTS 1
 
 struct PointLight{
     vec3 pos;
@@ -32,7 +32,7 @@ uniform int LOD;
 out vec4 fragColor;
 
 vec3 calculateFragColor(vec4 base){
-    float shiny = metallic * roughness;
+    float shiny = 1.0 - roughness;
     vec3 result = ambient * base.xyz;
     vec3 normal = normalize(fragNormal);
     // apply diffuse and specular changes for each light affecting the object.
@@ -46,12 +46,15 @@ vec3 calculateFragColor(vec4 base){
         result += light.emission * base.xyz * max(0, dot(normal, lightDir)) * attenuation;
 
         // specular:
-        vec3 view = normalize(camPos - fragPos);
-        vec3 vHalf = normalize(lightDir + view);
-        float shinyFactor = min(1.0, shiny);
-        float angle = max(0, dot(normal, vHalf));
-        if (angle > 0.001)
-            result += light.emission * pow(angle, shinyFactor) * attenuation * specular;
+        float NdotL = dot(normal, lightDir);
+        // only render if light in front of fragment
+        if(NdotL > 0.0){
+            vec3 view = normalize(camPos - fragPos);
+            vec3 vHalf = normalize(lightDir + view);
+            float shinyFactor = mix(1.0, specular, shiny);
+            float angle = max(0.001, dot(normal, vHalf));
+            result += light.emission * pow(angle, shinyFactor) * attenuation;
+        }
     }
     return result;
 }
@@ -60,7 +63,7 @@ void main()
 {
     if(LOD == 0) {
         vec4 base_color = ambient * vec4(diffuse.xyz, alpha) * texture(image, TexCoords * tiling);
-        fragColor = vec4(base_color.xyz, alpha) ;
+        fragColor = vec4(base_color.xyz, alpha);
         return;
     }
 

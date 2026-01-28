@@ -5,7 +5,7 @@
 #include <algorithm>
 
 // DO NOT UPDATE WITHOUT ALSO UPDATING SAME NAMED MACRO IN FRAGMENT SHADERS!
-#define MAX_LIGHTS 3
+#define MAX_LIGHTS 1
 #define DIST_THRESHOLD 5.0f
 #define AMBIENT_FACTOR 0.15f
 
@@ -33,7 +33,7 @@ struct Entry{
 // rendering system methods:
     std::vector<Entity*> RenderingSystem::Loaders = {};
 
-    constexpr float CELL_SIZE = 4.0f;
+    constexpr float CELL_SIZE = 40.0f;
 
     inline Vector2 WorldToCell(const glm::vec3& pos) {
         return Vector2{

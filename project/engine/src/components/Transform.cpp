@@ -78,13 +78,17 @@ namespace EisEngine::components{
     }
 
     // getters
+    glm::mat4 Transform::GetModelMatrix() {
+        if(!m_parent)
+            return modelMatrix;
+
+        return m_parent->GetModelMatrix() * modelMatrix;
+    }
+
     Vector3 Transform::GetGlobalPosition() {
         if(m_parent){
-            // I know this is bad practise but the system assumes scale invariant positions.
-            auto p_scale = m_parent->GetGlobalScale();
-            auto scaleInvariantParentMatrix = glm::scale(m_parent->modelMatrix, glm::vec3(1/p_scale.x, 1/p_scale.y, 1/p_scale.z));
-            // position by matrix instead of just adding parent pos for rotation variance.
-            glm::vec4 worldPos = m_parent->modelMatrix * glm::vec4((glm::vec3) localPosition, 1.0f);
+            auto p_model = m_parent->GetModelMatrix();
+            glm::vec4 worldPos = p_model * glm::vec4((glm::vec3) localPosition, 1.0f);
             return Vector3(worldPos.x, worldPos.y, worldPos.z);
         }
         return localPosition;

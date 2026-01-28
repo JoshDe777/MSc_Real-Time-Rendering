@@ -30,14 +30,14 @@ namespace EisEngine::systems{
             return glm::mat4(1.0f);
 
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, (glm::vec3) transform.GetGlobalPosition());
-        auto rotationVec3 = transform.GetGlobalRotation();
+        model = glm::translate(model, (glm::vec3) transform.GetLocalPosition());
+        auto rotationVec3 = transform.GetLocalRotation();
         model *= glm::eulerAngleYXZ(
                 glm::radians(rotationVec3.y),
                 glm::radians(rotationVec3.x),
                 glm::radians(rotationVec3.z)
             );
-        model = glm::scale(model, (glm::vec3) transform.GetGlobalScale());
+        model = glm::scale(model, (glm::vec3) transform.GetLocalScale());
         transform.dirty = false;
         return model;
     }

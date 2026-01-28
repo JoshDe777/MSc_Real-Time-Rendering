@@ -55,7 +55,7 @@ namespace EisEngine{
             [[nodiscard]] bool IsDirty() const { return dirty;}
 
             /// \n Returns the transform's model matrix, condensing full transform data in one object.
-            [[nodiscard]] glm::mat4 GetModelMatrix(){ return modelMatrix;}
+            [[nodiscard]] glm::mat4 GetModelMatrix();
             /// \n Returns a transform's local model matrix, condensing local transform data into one object.
             glm::mat4 GetLocalMatrix();
 

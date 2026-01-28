@@ -44,7 +44,10 @@ namespace RTR {
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Separator();
         ImGui::SeparatorText("Shininess Parameters");
-        ImGui::SliderFloat("Specular Strength", &spec, 0.0f, 10.0f);
+        if(shaderIndex != 1)
+            ImGui::SliderFloat("Specular Exponent", &spec, 2.0f, 200.0f);
+        else
+            ImGui::SliderFloat("Fresnel Factor", &spec, 0.0f, 10.0f);
         ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SeparatorText("Light Parameters");

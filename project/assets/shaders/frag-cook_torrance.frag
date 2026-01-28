@@ -1,6 +1,6 @@
 #version 460 core
 
-#define MAX_LIGHTS 3
+#define MAX_LIGHTS 1
 #define PI 3.1415
 
 struct PointLight{

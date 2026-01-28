@@ -31,7 +31,7 @@ namespace RTR {
 
         // ... & offset in y direction by orbitDist.
         orbitCentre = reference->GetGlobalPosition();
-        lightTransform->SetLocalPosition( orbitCentre+ orbitDist * Vector3::up);
+        lightTransform->SetLocalPosition( orbitCentre + orbitDist * Vector3::up);
 
         // orbit every frame.
         game.onUpdate.addListener([&](Game& game){
@@ -44,9 +44,9 @@ namespace RTR {
 
         auto orbitRotation = Quaternion::FromAxisAngle(orbitAxis, currentOrbit);
         auto totalRotation = (orbitFrame * orbitRotation).normalized();
-        auto baseOffset = -Vector3::forward * orbitDist;
+        auto baseOffset = Vector3::up * orbitDist;
 
-        lightTransform->SetLocalPosition(orbitCentre + totalRotation * baseOffset);
+        lightTransform->SetGlobalPosition(orbitCentre + totalRotation * baseOffset);
     }
 
     void Light::SetColor(const Vector3 &em) {

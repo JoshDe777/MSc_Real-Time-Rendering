@@ -28,30 +28,29 @@ uniform float ambient;
 uniform float specular;
 uniform vec3 camPos;
 uniform int LOD;
+uniform int n_levels;
 
 out vec4 fragColor;
 
 vec3 calculateFragColor(vec4 base){
     float shiny = metallic * roughness;
-    vec3 result = ambient * base.xyz;
+    vec3 result = vec3(0, 0, 0); // ambient * base.xyz;
     vec3 normal = normalize(fragNormal);
     // apply diffuse and specular changes for each light affecting the object.
     for(int i = 0; i < nLights; i++){
         PointLight light = lights[i];
         // diffuse:
         vec3 lightDir = normalize(light.pos - fragPos);
-        // calculate distance between light src and obj.
-        float dist = max(distance(light.pos, fragPos), 0.01);
-        float attenuation = light.I / (dist*dist);
-        result += light.emission * base.xyz * max(0, dot(normal, lightDir)) * attenuation;
+        float diff_brightness = 1 - floor(max(0, dot(normal, -lightDir)) * n_levels) / n_levels;
+
+        result += light.emission * base.xyz * diff_brightness;
 
         // specular:
-        vec3 view = normalize(camPos - fragPos);
-        vec3 vHalf = normalize(lightDir + view);
+        /*vec3 view = normalize(camPos - fragPos);
         float shinyFactor = min(1.0, shiny);
-        float angle = max(0, dot(normal, vHalf));
+        float angle = max(0, dot(normal, normalize(reflect(lightDir, normal))));
         if (angle > 0.001)
-            result += light.emission * pow(angle, shinyFactor) * attenuation * specular;
+            result += light.emission * pow(angle, shinyFactor * specular) * attenuation;*/
     }
     return result;
 }

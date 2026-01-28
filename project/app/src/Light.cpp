@@ -14,18 +14,12 @@ namespace RTR {
         auto x = 90.0f * (float) std::rand() / (float) RAND_MAX;
         auto y = 90.0f * (float) std::rand() / (float) RAND_MAX;
         auto z = 90.0f * (float) std::rand() / (float) RAND_MAX;
-        return Vector3(x, y, z);
+        return Vector3(x, y, z).normalized();
     }
 
-    Light::Light(Game& game, Transform* reference, const float& orbitDist)
+    Light::Light(Game& game, Transform* reference, const float& orbitDist) : orbitDist(orbitDist), orbitAxis(GetRandomOrbitAxis())
     {
-        // set empty entity at reference position
-        entity = std::make_shared<Entity>(game.entityManager.createEntity("lightRef"));
-
-        // set entity rotation to axis
-        entity->transform->SetGlobalPosition(reference->GetGlobalPosition());
-        entity->transform->SetLocalRotation(GetRandomOrbitAxis());
-
+        orbitFrame = Quaternion::FromAxisAngle(orbitAxis, 0.0f);
         // create child entity with point light features...
         auto lightEntity = game.entityManager.createEntity("light");
         lightTransform = static_cast<const shared_ptr<Transform>>(lightEntity.transform);
@@ -36,8 +30,8 @@ namespace RTR {
         component = static_cast<shared_ptr<PointLight>>(&lightEntity.AddComponent<PointLight>(mat.get()));
 
         // ... & offset in y direction by orbitDist.
-        lightTransform->SetParent(entity->transform);
-        lightTransform->SetLocalPosition(Vector3(0, 0, 1));
+        orbitCentre = reference->GetGlobalPosition();
+        lightTransform->SetLocalPosition( orbitCentre+ orbitDist * Vector3::up);
 
         // orbit every frame.
         game.onUpdate.addListener([&](Game& game){
@@ -46,7 +40,13 @@ namespace RTR {
     }
 
     void Light::Orbit() {
-        entity->transform->Rotate(Vector3(orbitStepPerSec * Time::deltaTime, 0, 0));
+        currentOrbit = Math::Mod(currentOrbit + orbitStepPerSec * Time::deltaTime, 360.0f);
+
+        auto orbitRotation = Quaternion::FromAxisAngle(orbitAxis, currentOrbit);
+        auto totalRotation = (orbitFrame * orbitRotation).normalized();
+        auto baseOffset = -Vector3::forward * orbitDist;
+
+        lightTransform->SetLocalPosition(orbitCentre + totalRotation * baseOffset);
     }
 
     void Light::SetColor(const Vector3 &em) {

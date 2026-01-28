@@ -138,4 +138,12 @@ namespace EisEngine{
             out.emplace_back(i.x, i.y);
         return out;
     }
+
+    inline Vector3 operator*(float const& f, const Vector3& v){
+        return Vector3(f*v.x, f*v.y, f*v.z);
+    }
+
+    inline Vector3 operator*(int const& i, const Vector3& v){
+        return Vector3(i*v.x, i*v.y, i*v.z);
+    }
 }

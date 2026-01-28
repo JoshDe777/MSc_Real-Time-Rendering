@@ -28,6 +28,8 @@ namespace EisEngine::systems {
         static void SetSpecularFactor(const float& val);
         /// \n Switches the shader for 3D objects to the requested shader.
         static void SetActiveShader(const std::string& shaderName);
+        /// \n sets the amount of brightness levels for the toon shader.
+        static void SetToonLevelCount(const int& n) {n_toon_levels = n;}
     private:
         /// \n A pointer to the active camera object.
         Camera* camera = nullptr;
@@ -52,5 +54,7 @@ namespace EisEngine::systems {
         static std::string active3DShader;
         /// \n A dictionary linking shader names to the name of their corresponding shader object in the ResourceManager.
         static const std::unordered_map<std::string, std::string> shaderNameDict;
+        /// \n the amount of brightness levels available to the toon shader.
+        static int n_toon_levels;
     };
 }

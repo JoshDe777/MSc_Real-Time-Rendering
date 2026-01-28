@@ -61,7 +61,7 @@ namespace EisEngine {
         static const Vector3 right;
         /// \n A Vector3 constant with values (0, 1, 0), representing the positive y direction in world space.
         static const Vector3 up;
-        /// \n A Vector3 constant with values (0, 0, 1), representing the positive z direction in world space.
+        /// \n A Vector3 constant with values (0, 0, -1), representing the positive z direction in world space.
         static const Vector3 forward;
 
         /// \n Rotates the vector by the given vector in degrees.

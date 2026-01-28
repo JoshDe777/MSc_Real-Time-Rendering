@@ -1,8 +1,8 @@
 #include "Simulation.h"
 
 int n_teapots = 3;
-std::vector<std::string> shaders = {"Blinn-Phong", "Cook-Torrance"};
-int shaderIndex = 1;
+std::vector<std::string> shaders = {"Blinn-Phong", "Cook-Torrance", "Toon"};
+int shaderIndex = 0;
 
 namespace RTR {
     inline Vector3 estimatePosition(const int& index){
@@ -49,7 +49,10 @@ namespace RTR {
         ImGui::Separator();
         ImGui::SeparatorText("Light Parameters");
         ImGui::ColorEdit3("Light Color", &emission.x);
-        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
+        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 20.0f);
+        ImGui::SliderFloat("Light Speed Modifier", &spd, 1.0f, 100.0f);
+        if(shaderIndex == 2)
+            ImGui::SliderInt("Toon Lighting Steps", &n_levels, 1, 12);
         ImGui::Separator();
         ImGui::SeparatorText("Shader Selection");
         if(ImGui::Button("Blinn-Phong"))
@@ -57,14 +60,15 @@ namespace RTR {
         if(ImGui::Button("Cook-Torrance"))
             shaderIndex = 1;
         if(ImGui::Button("Toon"))
-            DEBUG_INFO("Not Implemented")
-        // Intensity slider?
+            shaderIndex = 2;
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     void Simulation::UpdateWorld() {
+        // blinn-phong: roughness should be inverted
+        // cook-torrance: specular highlights too strong; add some attenuation
         for(const auto& teapot: pots){
             if (roughness == 0.0f)
                 roughness = 0.001f;
@@ -73,8 +77,11 @@ namespace RTR {
         for(const auto& light: lights){
             light->SetColor(emission);
             light->SetIntensity(intensity);
+            light->SetRotationSpeed(spd);
         }
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetActiveShader(shaders[shaderIndex]);
+        if(shaderIndex == 2)
+            RenderingSystem::SetToonLevelCount(n_levels);
     }
 }

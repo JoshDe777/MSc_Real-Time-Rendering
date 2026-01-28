@@ -179,7 +179,6 @@ namespace EisEngine::components{
     }
     void Transform::SetLocalRotation(const Vector3& rotation) {
         auto newRotation = NormalizeAngles(rotation);
-        auto angularDiff = CalculateAngularRotation(localRotation, newRotation);
         localRotation = newRotation;
         m_rotationChanged = true;
         MarkDirty();

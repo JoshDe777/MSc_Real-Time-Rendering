@@ -44,7 +44,7 @@ vec3 calculateFragColor(vec4 base){
         float brightness = max(0, dot(normal, lightDir));
         // calculate distance between light src and obj.
         float dist = max(distance(light.pos, fragPos), 0.01);
-        float attenuation = light.I / (dist*dist);
+        float attenuation = light.I / pow(dist, 3);
         result += light.emission * base.xyz * brightness * attenuation;
 
     // specular:

@@ -19,6 +19,13 @@ namespace EisEngine {
         /// \n Creates a new Quaternion from an aiQuaternion object.
         /// @param q - aiQuaternion: the quaternion data used to create this quaternion.
         explicit Quaternion(const aiQuaternion& q) : x(q.x), y(q.y), z(q.z), r(q.w) {}
+        /// \n Creates a new quaternion as an explicit vec3 + r composition.
+        explicit Quaternion(const Vector3& axis, const float& r);
+
+        /// \n Creates a new Quaternion from a 3D RotationVector.
+        static Quaternion FromEulerXYZ(const Vector3& deg);
+        /// \n Creates a new Quaternion as an angle on axis.
+        static Quaternion FromAxisAngle(const Vector3& deg, const float& angle);
 
         /// \n The x value of this quaternion
         float x;
@@ -38,6 +45,7 @@ namespace EisEngine {
         Quaternion operator*(Quaternion const &q) const;
         Quaternion operator*(float const& c) const;
         Quaternion operator*(int const& c) const;
+        Vector3 operator*(const Vector3& v) const;
 
         Quaternion& operator+=(Quaternion const &q);
         Quaternion& operator-=(Quaternion const &q);

@@ -12,11 +12,13 @@
 namespace EisEngine::systems {
 // helper functions:
 float RenderingSystem::specularFactor = 1.0f;
+int RenderingSystem::n_toon_levels = 8;
 const std::string RenderingSystem::defaultShader = "Blinn-Phong";
 std::string RenderingSystem::active3DShader = "Blinn-Phong";
 const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
         {"Blinn-Phong", "Blinn-Phong Shader"},
-        {"Cook-Torrance", "Cook-Torrance Shader"}
+        {"Cook-Torrance", "Cook-Torrance Shader"},
+        {"Toon", "Toon Shader"}
 };
 
 struct Entry{
@@ -80,14 +82,18 @@ struct Entry{
         ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
                                                  "shaders/frag-sprite_unlit.frag",
                                                  "UI Shader");
-        // generate 3D shader
+        // generate Blinn-Phong shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-blinn_phong.frag",
                                                  "Blinn-Phong Shader");
-        // generate 3D shader
+        // generate Cook-Torrance shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-cook_torrance.frag",
                                                  "Cook-Torrance Shader");
+        // generate Toon shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-toon.frag",
+                                                 "Toon Shader");
 
         glDisable(GL_CULL_FACE);
     }
@@ -240,6 +246,7 @@ struct Entry{
                     activeShader->setInt("LOD", 0);
                 }
 
+                activeShader->setInt("n_levels", n_toon_levels);
                 mesh.draw(activeShader->GetShaderID());
             });
         }

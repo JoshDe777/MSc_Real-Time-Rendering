@@ -72,29 +72,36 @@ namespace EisEngine::components {
     void Mesh3D::draw(const unsigned int& shaderProgram) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         GLCheckError("Mesh3D::DrawElements::VBO Binding", entity()->name());
+        unsigned long long offset = 0;
 
         // draw vertices
         auto vpos = glGetAttribLocation(shaderProgram, "aPos");
-        glEnableVertexAttribArray(vpos);
-        glVertexAttribPointer(vpos, 3, GL_FLOAT, GL_FALSE,
-                              0, nullptr);
-        auto offset = primitive.GetVertexCount() * sizeof(glm::vec3);
-        GLCheckError("Mesh3D::DrawElements::vertices", entity()->name());
+        if(vpos != -1){
+            glEnableVertexAttribArray(vpos);
+            glVertexAttribPointer(vpos, 3, GL_FLOAT, GL_FALSE,
+                                  0, nullptr);
+            GLCheckError("Mesh3D::DrawElements::vertices", entity()->name());
+        }
+        offset = primitive.GetVertexCount() * sizeof(glm::vec3);
 
         // add normals
         auto norm = glGetAttribLocation(shaderProgram, "normal");
-        glEnableVertexAttribArray(norm);
-        glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE,
-                              0, (GLvoid*)offset);
+        if(norm != -1){
+            glEnableVertexAttribArray(norm);
+            glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE,
+                                  0, (GLvoid*)offset);
+            GLCheckError("Mesh3D::DrawElements::normals", entity()->name());
+        }
         offset += primitive.GetNormalsCount() * sizeof(glm::vec3);
-        GLCheckError("Mesh3D::DrawElements::normals", entity()->name());
 
         // add uvs
         auto uv = glGetAttribLocation(shaderProgram, "texCoords");
-        glEnableVertexAttribArray(uv);
-        glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE,
-                              0, (GLvoid*)offset);
-        GLCheckError("Mesh3D::DrawElements::uvs", entity()->name());
+        if(uv != -1){
+            glEnableVertexAttribArray(uv);
+            glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE,
+                                  0, (GLvoid*)offset);
+            GLCheckError("Mesh3D::DrawElements::uvs", entity()->name());
+        }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         GLCheckError("Mesh3D::DrawElements::indices", entity()->name());

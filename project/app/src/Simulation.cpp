@@ -1,8 +1,6 @@
 #include "Simulation.h"
 
 int n_teapots = 3;
-std::vector<std::string> shaders = {"Blinn-Phong", "Cook-Torrance", "Toon"};
-int shaderIndex = 0;
 
 namespace RTR {
     inline Vector3 estimatePosition(const int& index){
@@ -26,7 +24,7 @@ namespace RTR {
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader(shaders[shaderIndex]);
+        RenderingSystem::SetActiveShader("Glassy");
         // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
 
         onUpdate.addListener([&](Game& game){
@@ -44,26 +42,14 @@ namespace RTR {
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Separator();
         ImGui::SeparatorText("Shininess Parameters");
-        if(shaderIndex != 1)
-            ImGui::SliderFloat("Specular Exponent", &spec, 2.0f, 200.0f);
-        else
-            ImGui::SliderFloat("Fresnel Factor", &spec, 0.0f, 10.0f);
+        ImGui::SliderFloat("Specular Exponent", &spec, 2.0f, 200.0f);
         ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SeparatorText("Light Parameters");
         ImGui::ColorEdit3("Light Color", &emission.x);
-        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 20.0f);
-        ImGui::SliderFloat("Light Speed Modifier", &spd, 1.0f, 100.0f);
-        if(shaderIndex == 2)
-            ImGui::SliderInt("Toon Lighting Steps", &n_levels, 1, 12);
-        ImGui::Separator();
-        ImGui::SeparatorText("Shader Selection");
-        if(ImGui::Button("Blinn-Phong"))
-            shaderIndex = 0;
-        if(ImGui::Button("Cook-Torrance"))
-            shaderIndex = 1;
-        if(ImGui::Button("Toon"))
-            shaderIndex = 2;
+        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f,  20.0f);
+        ImGui::SliderFloat("Light Speed Modifier", &spd, 0.0f, 100.0f);
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -76,6 +62,7 @@ namespace RTR {
             if (roughness == 0.0f)
                 roughness = 0.001f;
             teapot->setRoughness(roughness);
+            teapot->setOpacity(opacity);
         }
         for(const auto& light: lights){
             light->SetColor(emission);
@@ -83,8 +70,5 @@ namespace RTR {
             light->SetRotationSpeed(spd);
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader(shaders[shaderIndex]);
-        if(shaderIndex == 2)
-            RenderingSystem::SetToonLevelCount(n_levels);
     }
 }

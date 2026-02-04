@@ -18,8 +18,8 @@ namespace RTR {
         float roughness = 1.0f;
         Vector3 emission = Vector3::one;
         float intensity = 1.0f;
-        int n_levels = 8;
-        float spd = 0.1f;
+        float spd = 1.0f;
+        float opacity = 0.1f;
 
         void DisplayUI();
         void UpdateWorld();

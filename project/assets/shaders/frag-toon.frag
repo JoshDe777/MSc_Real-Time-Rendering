@@ -42,7 +42,7 @@ vec3 calculateFragColor(vec4 base){
         // diffuse:
         vec3 lightDir = normalize(light.pos - fragPos);
         float diff_brightness = 1 - floor(max(0, dot(normal, -lightDir)) * n_levels) / n_levels;
-        float intensity = max(1.0, light.I);
+        float intensity = min(1.0, light.I);
 
         result += intensity * light.emission * base.xyz * diff_brightness;
 

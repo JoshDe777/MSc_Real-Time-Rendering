@@ -46,6 +46,7 @@ namespace RTR {
         renderer->material->SetDiffuse(Color::red);
         renderer->material->SetMetallic(1.0f);
         renderer->material->SetRoughness(0.7f);
+        renderer->material->SetOpacity(0.1f);
 
         game.onUpdate.addListener([&](Game& game){
             rotate();
@@ -55,6 +56,11 @@ namespace RTR {
     void Teapot::setRoughness(const float &val) {
         auto endval = std::clamp(val, 0.0f, 1.0f);
         renderer->material->SetRoughness(endval);
+    }
+
+    void Teapot::setOpacity(const float &val) {
+        auto endval = std::clamp(val, 0.0f, 1.0f);
+        renderer->material->SetOpacity(endval);
     }
 
     void Teapot::rotate() {

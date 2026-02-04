@@ -50,6 +50,9 @@ namespace EisEngine::systems {
         /// \n Calculates the projection matrix, representing the transformation from
         /// camera space into 2D screen coordinates.
         [[nodiscard]] glm::mat4 GetProjectionMatrix() const;
+        /// \n Calculates the view matrix, representing the transformation required to
+        /// translate world space transforms to camera space.
+        [[nodiscard]] glm::mat4 CalculateViewMatrix() const;
 
         /// \n Sets a new FOV value for the active camera.
         void SetFOV(const float& val) {fov = val;}
@@ -86,8 +89,5 @@ namespace EisEngine::systems {
 
         /// \n updates the aspect ratio to width/height.
         void UpdateAspectRatio() { aspectRatio = (float) m_screenWidth / (float) m_screenHeight; }
-        /// \n Calculates the view matrix, representing the transformation required to
-        /// translate world space transforms to camera space.
-        [[nodiscard]] glm::mat4 CalculateViewMatrix() const;
     };
 }

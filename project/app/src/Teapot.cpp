@@ -43,7 +43,7 @@ namespace RTR {
             DEBUG_RUNTIME_ERROR("Couldn't find Renderer on Teapot!")
 
         renderer = static_cast<const shared_ptr<Renderer>>(temp);
-        renderer->material->SetDiffuse(Color::red);
+        renderer->material->SetDiffuse(Color::white);
         renderer->material->SetMetallic(1.0f);
         renderer->material->SetRoughness(0.7f);
         renderer->material->SetOpacity(0.1f);

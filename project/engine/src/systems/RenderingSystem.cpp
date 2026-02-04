@@ -81,6 +81,11 @@ struct Entry{
             nullptr
         );
 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glFramebufferTexture2D(
             GL_FRAMEBUFFER,
             GL_COLOR_ATTACHMENT0,
@@ -106,6 +111,10 @@ struct Entry{
                 RBO[index]
         );
 
+        // add draw buffer
+        GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+        glDrawBuffers(1, drawBufs);
+
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -129,6 +138,11 @@ struct Entry{
                     GL_FLOAT,
                     nullptr
             );
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
             // gen RBO for depth cache (?)
             glBindRenderbuffer(GL_RENDERBUFFER, RBO[i]);
@@ -441,6 +455,9 @@ struct Entry{
             activeShader->setFloat("specular", specularFactor);
             activeShader->setInt("backDepthMap", 1);
             activeShader->setInt("frontDepthMap", 2);
+            auto dims = engine.context.GetWindowSize();
+            activeShader->setInt("screenWidth", (int) dims.x);
+            activeShader->setInt("screenHeight", (int) dims.y);
 
             for(auto mesh: transparentMeshes){
                 PrepareDraw(*mesh, activeShader);

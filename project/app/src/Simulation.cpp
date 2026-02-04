@@ -24,7 +24,7 @@ namespace RTR {
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader("Glassy");
+        RenderingSystem::SetActiveShader("Cook-Torrance");
         // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
 
         onUpdate.addListener([&](Game& game){

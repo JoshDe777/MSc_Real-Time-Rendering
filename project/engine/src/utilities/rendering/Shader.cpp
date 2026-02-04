@@ -47,9 +47,15 @@ namespace EisEngine::rendering {
     }
 
     void Shader::ApplyTexture(const Texture2D& texture) const {
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DIFFUSE);
         texture.Bind();
-        setInt("image", 0);
+        setInt("image", UniformSamplerIndices::DIFFUSE);
+    }
+
+    void Shader::ApplyCubemap(const Cubemap& cubemap) const {
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
+        cubemap.Bind();
+        setInt("cubemap", UniformSamplerIndices::CUBEMAP);
     }
 
     void Shader::setMatrix(const std::string &uniformName, glm::mat4 mat4) const {
@@ -84,10 +90,4 @@ namespace EisEngine::rendering {
         if(uniformLocation != -1)
             glUniform1f(uniformLocation, val);
     }
-
-    const fs::path Shader::defaultVertexShaderPath = "shaders/vert-no_normals.vert";
-    const fs::path Shader::defaultFragmentShaderPath = "shaders/frag-material_debug_unlit.frag";
-    const fs::path Shader::spriteVertexShaderPath = "shaders/spriteVertexShader.vert";
-    const fs::path Shader::spriteFragmentShaderPath = "shaders/frag-sprite_unlit.frag";
-    const fs::path Shader::uiVertexShaderPath = "shaders/uiVertexShader.vert";
 }

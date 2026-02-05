@@ -57,6 +57,8 @@ namespace EisEngine::ecs {
         Transform* transform = nullptr;
         /// \n A void pointer allowing for users to bridge between their systems and an EisEngine entity.
         void* user_data = nullptr;
+
+        bool operator==(Entity& other) const {return other.m_id == m_id;}
     private:
         /// \n Creates a new entity.
         /// @param name - std::string: the name given to the entity, not necessarily unique.

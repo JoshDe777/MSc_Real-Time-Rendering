@@ -4,6 +4,7 @@
 
 #include "Teapot.h"
 #include "Light.h"
+#include "Skybox.h"
 
 namespace RTR {
     class Simulation : public Game {
@@ -13,6 +14,7 @@ namespace RTR {
         shared_ptr<Entity> light_source = nullptr;
         std::vector<shared_ptr<Teapot>> pots = {};
         std::vector<shared_ptr<Light>> lights = {};
+        shared_ptr<Skybox> skybox = nullptr;
         Vector3 worldOffset = Vector3(0, -2, 10);
         float spec = 4.0f;
         float roughness = 1.0f;

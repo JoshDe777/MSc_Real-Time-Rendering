@@ -2,13 +2,6 @@
 #include "engine/ecs/Entity.h"
 
 namespace EisEngine::components {
-    void GLCheckError(const char* context, const std::string& entityName) {
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR) {
-            DEBUG_ERROR("OpenGL Error [" + entityName + "::" + std::string(context) + "]: " + std::to_string(error))
-        }
-    }
-
     // create and fill an openGL buffer object of the specified type.
     template<typename T>
     GLuint CreateBuffer(GLuint bufferType, const std::vector<T> &bufferData) {
@@ -42,6 +35,8 @@ namespace EisEngine::components {
         glBufferSubData(GL_ARRAY_BUFFER, offset, nsize, normals.data());
         offset += nsize;
         glBufferSubData(GL_ARRAY_BUFFER, offset, uvsize, uvs.data());
+
+        GLCheckError("Mesh3D::CreateVBO", "Primitive");
 
         return buffer;
     }

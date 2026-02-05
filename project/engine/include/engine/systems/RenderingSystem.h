@@ -34,6 +34,8 @@ namespace EisEngine{
             void Draw();
             /// \n Adds an entity as an LOD loader object.
             static void MarkAsLoader(Entity* ptr);
+            /// \n Sets the entity to be displayed as the skybox in the scene.
+            static void SetSkyboxEntity(Entity* ptr);
             /// \n changes the specular factor in the scene for the Blinn-Phong Shader.
             static void SetSpecularFactor(const float& val);
             /// \n Switches the shader for 3D objects to the requested shader.
@@ -47,6 +49,8 @@ namespace EisEngine{
             void InitFBO(const int& index, const Vector2& screenDims);
             /// \n Resizes buffers on window size shift.
             void ResizeFBOItems(const Vector2& newScreenDims);
+            /// \n Drawing program for all translucent objects.
+            void DrawTransparentObjects(std::vector<Mesh3D*>& transparentMeshes, Shader* activeShader);
 
             /// \n A pointer to the active camera object.
             Camera* camera = nullptr;
@@ -62,6 +66,8 @@ namespace EisEngine{
             static Event onResize;
             /// \n A list of entities enabling other entities in a certain radius of them to be lit.
             static std::vector<Entity*> Loaders;
+            /// \n A pointer to the entity marked as a skybox.
+            static shared_ptr<Entity> skybox;
             /// \n A reference of Point Lights by approximate position in world 2D (x, z) space.
             std::unordered_map<Vector2, std::vector<int>, GridCoordHashMap> LightGrid = {};
             /// \n Collects all Point Lights in the scene and compiles them to a usable grid.

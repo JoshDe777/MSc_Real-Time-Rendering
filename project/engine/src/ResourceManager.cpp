@@ -10,6 +10,7 @@
 
 namespace EisEngine {
     std::map<std::string, std::unique_ptr<Texture2D>> ResourceManager::Textures = {};
+    std::map<std::string, std::unique_ptr<Cubemap>> ResourceManager::Cubemaps = {};
     std::map<std::string, std::unique_ptr<Material>> ResourceManager::Materials = {};
     std::map<std::string, std::unique_ptr<Shader>> ResourceManager::Shaders = {};
     Assimp::Importer importer;
@@ -328,6 +329,70 @@ namespace EisEngine {
         }
 
         return Textures[name].get();
+    }
+#pragma endregion
+
+#pragma region Cubemap handling
+
+    Cubemap *ResourceManager::GenerateCubemapFromFiles(const std::vector<std::string> &imagePaths,
+                                                       const std::string &cubemapName) {
+        // worth considering an 'overwrite' parameter?
+        if (Cubemaps[cubemapName] == nullptr /*|| overwrite */){
+            Cubemaps[cubemapName] = std::make_unique<Cubemap>(
+                    loadCubemapFromFiles(imagePaths));
+        }
+        else
+            DEBUG_WARN("Attempted to overwrite existing texture " + cubemapName + ".")
+        return GetCubemap(cubemapName);
+    }
+
+    Cubemap *ResourceManager::GetCubemap(const std::string &name) {
+        if(Cubemaps.empty()){
+            DEBUG_WARN("No cubemaps created in resource manager system.")
+            return nullptr;
+        }
+
+        return Cubemaps[name].get();
+    }
+
+    Cubemap ResourceManager::loadCubemapFromFiles(const std::vector<std::string> &filePaths) {
+        Cubemap texture;
+        if(filePaths.size() < 6){
+            DEBUG_ERROR("Not enough textures provided to generate a valid cubemap! (" + std::to_string(filePaths.size()) + ")")
+            return texture;
+        }
+
+        unsigned int i = 0;
+        for(auto& path: filePaths){
+            auto filePath = resolveAssetPath(path);
+            stbi_set_flip_vertically_on_load(0);
+
+            std::string pathString = filePath.string();
+            const char* filename = pathString.c_str();
+
+            int width, height, nrChannels;
+            // try catch here?
+            unsigned char* data = stbi_load(filename, &width, &height, &nrChannels, 0);
+
+            if(!data){
+                DEBUG_ERROR("Failed to load image: " + pathString)
+                continue;
+            }
+
+            if(nrChannels == 4) {
+                texture.internalFormat = GL_RGBA;
+                texture.imageFormat = GL_RGBA;
+            }
+
+            DEBUG_LOG("Texture formats: internal: " + std::to_string(texture.internalFormat) + ", image: " + std::to_string(texture.imageFormat))
+            texture.Generate(i, width, height, data);
+
+            stbi_image_free(data);
+            i++;
+        }
+
+        texture.SetParams();
+        return texture;
     }
 #pragma endregion
 

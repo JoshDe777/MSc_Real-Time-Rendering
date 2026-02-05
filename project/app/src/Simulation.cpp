@@ -25,7 +25,8 @@ namespace RTR {
         }
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetActiveShader("Cook-Torrance");
-        // is it worth bringing back in UI Sliders?? I'm sure we have some from the GLIII project!?
+
+        skybox = std::make_shared<Skybox>(*this);
 
         onUpdate.addListener([&](Game& game){
             DisplayUI();

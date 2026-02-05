@@ -9,7 +9,15 @@ namespace EisEngine {
     public:
         void Bind() const;
     private:
-        unsigned int id;
+        /// \n Creates a new Cubemap object
+        Cubemap();
+
+        void Generate(unsigned int& index, unsigned int width, unsigned int height, unsigned char* data);
+        void SetParams();
+        unsigned int textureID;
+
+        int width = -1;
+        int height = -1;
 
         /// \n texture object format.
         unsigned int internalFormat;

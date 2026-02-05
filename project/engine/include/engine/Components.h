@@ -11,6 +11,7 @@
 #include "engine/components/meshes/SpriteMesh.h"
 
 #include "engine/components/Renderer.h"
+#include "engine/components/CubemapRenderer.h"
 #include "engine/components/PointLight.h"
 #include "engine/components/Animator.h"
 
@@ -25,5 +26,6 @@ using SpriteMesh = EisEngine::components::SpriteMesh;
 using Line = EisEngine::components::Line;
 
 using Renderer = EisEngine::components::Renderer;
+using CubemapRenderer = EisEngine::components::CubemapRenderer;
 using PointLight = EisEngine::components::PointLight;
 using Animator = EisEngine::components::Animator;

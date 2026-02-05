@@ -23,6 +23,7 @@ const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDi
         {"Glassy", "Glassy Shader"}
 };
 Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
+shared_ptr<Entity> RenderingSystem::skybox = nullptr;
 
 struct Entry{
     PointLight* L;
@@ -58,6 +59,10 @@ struct Entry{
                 return;
             }
         DEBUG_WARN("Attempted to set shader to invalid value [" + shaderName + "].")
+    }
+
+    void RenderingSystem::SetSkyboxEntity(EisEngine::ecs::Entity *ptr) {
+        skybox = static_cast<shared_ptr<Entity>>(ptr);
     }
 
     void RenderingSystem::InitFBO(const int& index, const Vector2& screenDims) {
@@ -222,6 +227,10 @@ struct Entry{
                                                  "shaders/frag-glassy.frag",
                                                  "Glassy Shader");
 
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-skybox.vert",
+                                                 "shaders/frag-skybox.frag",
+                                                 "Skybox Shader");
+
         glDisable(GL_CULL_FACE);
     }
 
@@ -334,6 +343,82 @@ struct Entry{
         activeShader->setInt("n_levels", n_toon_levels);
     }
 
+    void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
+        activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
+        activeShader->Apply(camera);
+        activeShader->setFloat("ambient", AMBIENT_FACTOR);
+        activeShader->setFloat("specular", specularFactor);
+
+        // bind thickness fbo
+        // clear color & depth
+        // cull front faces
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
+
+        for(auto mesh: transparentMeshes){
+            // I think I just need geometry for this one; Edit to fit.
+            // PrepareDraw(*mesh, activeShader);
+            auto model = mesh->entity()->transform->GetModelMatrix();
+            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+            auto view = camera->CalculateViewMatrix();
+            activeShader->setMatrix("mv", view * model);
+            mesh->draw(activeShader->GetShaderID());
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_BACK);
+        // redo a second pass for front face.
+
+        for(auto mesh: transparentMeshes){
+            // I think I just need geometry for this one; Edit to fit.
+            // PrepareDraw(*mesh, activeShader);
+            auto model = mesh->entity()->transform->GetModelMatrix();
+            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+            auto view = camera->CalculateViewMatrix();
+            activeShader->setMatrix("mv", view * model);
+            mesh->draw(activeShader->GetShaderID());
+        }
+
+        // bind "base" fbo (none)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_DEPTH_TEST);
+        // turn off depth writing
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
+        activeShader->Apply(camera);
+        activeShader->setFloat("ambient", AMBIENT_FACTOR);
+        activeShader->setFloat("specular", specularFactor);
+        activeShader->setInt("backDepthMap", 1);
+        activeShader->setInt("frontDepthMap", 2);
+        auto dims = engine.context.GetWindowSize();
+        activeShader->setInt("screenWidth", (int) dims.x);
+        activeShader->setInt("screenHeight", (int) dims.y);
+
+        for(auto mesh: transparentMeshes){
+            PrepareDraw(*mesh, activeShader);
+            // bind back depth texture
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, depthTex[0]);
+            // bind front depth texture
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, depthTex[1]);
+            mesh->draw(activeShader->GetShaderID());
+        }
+
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
+
     void RenderingSystem::Draw() {
         if(LightGrid.empty())
             BuildLightGrid();
@@ -346,8 +431,8 @@ struct Entry{
         auto activeShader = ResourceManager::GetShader("Default Shader");
 
         // Mesh2D rendering
+        glBindVertexArray(VAO[i++]);
         if(engine.componentManager.hasComponentOfType<Mesh2D>()){
-            glBindVertexArray(VAO[i++]);
             activeShader->Apply(camera);
             engine.componentManager.forEachComponent<Mesh2D>([&](Mesh2D& mesh){
                 auto model = mesh.entity()->transform->GetModelMatrix();
@@ -360,8 +445,8 @@ struct Entry{
         }
 
         // line rendering (same shader as Mesh2D's)
+        glBindVertexArray(VAO[i++]);
         if(engine.componentManager.hasComponentOfType<Line>()){
-            glBindVertexArray(VAO[i++]);
             engine.componentManager.forEachComponent<Line>([&] (Line& mesh){
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
                 if(renderer)
@@ -374,6 +459,32 @@ struct Entry{
         #pragma endregion
 
         #pragma region 3D rendering
+        glBindVertexArray(VAO[i++]);
+        if(skybox != nullptr){
+            glDisable(GL_CULL_FACE);
+
+            GLCheckError("[Entering Skybox Rendering]", "[Previous Program/Entity]");
+            activeShader = ResourceManager::GetShader("Skybox Shader");
+            activeShader->Apply(camera);
+
+            glDepthMask(GL_FALSE);
+            glDepthFunc(GL_LEQUAL);
+            auto view = glm::mat4(glm::mat3(camera->CalculateViewMatrix()));
+            auto proj = camera->GetProjectionMatrix();
+
+            activeShader->setMatrix("vp", proj * view);
+
+            // apply cubemap
+            auto renderer = skybox->GetComponent<CubemapRenderer>();
+            renderer->ApplyData(*activeShader);
+
+            auto mesh = skybox->GetComponent<Mesh3D>();
+            mesh->draw(activeShader->GetShaderID());
+
+            glDepthFunc(GL_LESS);
+            glDepthMask(GL_TRUE);
+        }
+
         // Mesh3D rendering
         activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
         activeShader->Apply(camera);
@@ -383,10 +494,13 @@ struct Entry{
         std::vector<Mesh3D*> transparentMeshes = {};
 
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
-            glBindVertexArray(VAO[i++]);
             engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){
+                // don't render skybox object.
+                if(skybox != nullptr && *mesh.entity() == *skybox)
+                    return;
+
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
-                // early exit if transparent mesh.
+                // early exit if transparent mesh (separate shaders).
                 if(renderer && renderer->material->GetOpacity() != 1.0f){
                     transparentMeshes.emplace_back(&mesh);
                     return;
@@ -399,79 +513,7 @@ struct Entry{
         }
 
         if(!transparentMeshes.empty()){
-            activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
-            activeShader->Apply(camera);
-            activeShader->setFloat("ambient", AMBIENT_FACTOR);
-            activeShader->setFloat("specular", specularFactor);
-
-            // bind thickness fbo
-            // clear color & depth
-            // cull front faces
-            glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_FRONT);
-            glDisable(GL_BLEND);
-            glDepthMask(GL_TRUE);
-
-            for(auto mesh: transparentMeshes){
-                // I think I just need geometry for this one; Edit to fit.
-                // PrepareDraw(*mesh, activeShader);
-                auto model = mesh->entity()->transform->GetModelMatrix();
-                activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                auto view = camera->CalculateViewMatrix();
-                activeShader->setMatrix("mv", view * model);
-                mesh->draw(activeShader->GetShaderID());
-            }
-
-            glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glCullFace(GL_BACK);
-            // redo a second pass for front face.
-
-            for(auto mesh: transparentMeshes){
-                // I think I just need geometry for this one; Edit to fit.
-                // PrepareDraw(*mesh, activeShader);
-                auto model = mesh->entity()->transform->GetModelMatrix();
-                activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                auto view = camera->CalculateViewMatrix();
-                activeShader->setMatrix("mv", view * model);
-                mesh->draw(activeShader->GetShaderID());
-            }
-
-            // bind "base" fbo (none)
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glEnable(GL_DEPTH_TEST);
-            // turn off depth writing
-            glDepthMask(GL_FALSE);
-            glDisable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-
-            activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
-            activeShader->Apply(camera);
-            activeShader->setFloat("ambient", AMBIENT_FACTOR);
-            activeShader->setFloat("specular", specularFactor);
-            activeShader->setInt("backDepthMap", 1);
-            activeShader->setInt("frontDepthMap", 2);
-            auto dims = engine.context.GetWindowSize();
-            activeShader->setInt("screenWidth", (int) dims.x);
-            activeShader->setInt("screenHeight", (int) dims.y);
-
-            for(auto mesh: transparentMeshes){
-                PrepareDraw(*mesh, activeShader);
-                // bind back depth texture
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, depthTex[0]);
-                // bind front depth texture
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, depthTex[1]);
-                mesh->draw(activeShader->GetShaderID());
-            }
-
-            glDepthMask(GL_TRUE);
-            glDisable(GL_BLEND);
+            DrawTransparentObjects(transparentMeshes, activeShader);
         }
         #pragma endregion
 
@@ -483,8 +525,8 @@ struct Entry{
         // weed out UI Sprites for later overlay rendering
         std::vector<SpriteMesh*> uiSprites = {};
 
+        glBindVertexArray(VAO[i++]);
         if(engine.componentManager.hasComponentOfType<SpriteMesh>()){
-            glBindVertexArray(VAO[i++]);
             activeShader->Apply(camera);
             engine.componentManager.forEachComponent<SpriteMesh>([&] (SpriteMesh& mesh){
                 auto renderer = mesh.entity()->GetComponent<Renderer>();

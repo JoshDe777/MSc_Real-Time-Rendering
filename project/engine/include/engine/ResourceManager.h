@@ -50,6 +50,10 @@ namespace EisEngine {
         /// \n fetches a texture using its name.
         static Texture2D* GetTexture(const std::string& name);
 
+        /// \n Generates a cubemap texture from 6 images in order right - left - top - bottom - front - back.
+        static Cubemap* GenerateCubemapFromFiles(const std::vector<std::string>& imagePaths, const std::string& cubemapName);
+        static Cubemap* GetCubemap(const std::string& name);
+
         /// \n fetches a material using its name.
         static Material* GetMaterial(const std::string& matname);
         /// \n creates an instance of a material using its name.
@@ -75,6 +79,8 @@ namespace EisEngine {
 
         /// \n A dictionary of textures associated to their file name.
         static std::map<std::string, std::unique_ptr<Texture2D>> Textures;
+        /// \n A dictionary of textures associated to their file name.
+        static std::map<std::string, std::unique_ptr<Cubemap>> Cubemaps;
         /// \n A dictionary of shaders associated to their name.
         static std::map<std::string, std::unique_ptr<Shader>> Shaders;
         /// \n A dictionary of materials associated to their name.
@@ -104,6 +110,10 @@ namespace EisEngine {
 
         /// \n creates a dummy, white texture.
         static Texture2D* MakeDummyTexture();
+        #pragma endregion
+
+        #pragma region Cubemaps
+        static Cubemap loadCubemapFromFiles(const std::vector<std::string>& filePaths);
         #pragma endregion
 
         #pragma region Materials

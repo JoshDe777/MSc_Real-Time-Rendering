@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 #include <sstream>
+#include <OpenGL/OpenGlInclude.h>
 
 namespace EisEngine {
     using namespace std;
@@ -186,4 +187,11 @@ namespace EisEngine {
         static std::string CompileTimeToString(const std::array<int, 3> &time)
         { return to_string(time[0]) + ":" + to_string(time[1]) + ":" + to_string(time[2]);}
     };
+
+    inline void GLCheckError(const char* context, const std::string& entityName) {
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR) {
+            DEBUG_ERROR("OpenGL Error [" + entityName + "::" + std::string(context) + "]: " + std::to_string(error))
+        }
+    }
 }

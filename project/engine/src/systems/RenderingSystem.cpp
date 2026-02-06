@@ -7,7 +7,6 @@
 // DO NOT UPDATE WITHOUT ALSO UPDATING SAME NAMED MACRO IN FRAGMENT SHADERS!
 #define MAX_LIGHTS 1
 #define DIST_THRESHOLD 5.0f
-#define AMBIENT_FACTOR 0.15f
 
 namespace EisEngine::systems {
 // helper functions:
@@ -24,6 +23,8 @@ const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDi
 };
 Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
 shared_ptr<Entity> RenderingSystem::skybox = nullptr;
+Vector3 RenderingSystem::eta = Vector3::zero;
+float RenderingSystem::ambient = 0.15f;
 
 struct Entry{
     PointLight* L;
@@ -346,7 +347,7 @@ struct Entry{
     void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
         activeShader->Apply(camera);
-        activeShader->setFloat("ambient", AMBIENT_FACTOR);
+        activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
         // bind thickness fbo
@@ -396,22 +397,35 @@ struct Entry{
 
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
         activeShader->Apply(camera);
-        activeShader->setFloat("ambient", AMBIENT_FACTOR);
+        activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
-        activeShader->setInt("backDepthMap", 1);
-        activeShader->setInt("frontDepthMap", 2);
+
         auto dims = engine.context.GetWindowSize();
         activeShader->setInt("screenWidth", (int) dims.x);
         activeShader->setInt("screenHeight", (int) dims.y);
+        activeShader->setVector("eta", eta);
+
+        if(skybox == nullptr)
+            return;
+
+        // apply cubemap
+        auto renderer = skybox->GetComponent<CubemapRenderer>();
+        renderer->ApplyData(*activeShader);
+
+        // bind back depth texture
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_BACK_FACE);
+        glBindTexture(GL_TEXTURE_2D, depthTex[0]);
+        // bind front depth texture
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_FRONT_FACE);
+        glBindTexture(GL_TEXTURE_2D, depthTex[1]);
+
+        GLint boundCube;
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
+        glGetIntegerv(GL_TEXTURE_BINDING_CUBE_MAP, &boundCube);
+        assert(boundCube != 0);
 
         for(auto mesh: transparentMeshes){
             PrepareDraw(*mesh, activeShader);
-            // bind back depth texture
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, depthTex[0]);
-            // bind front depth texture
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, depthTex[1]);
             mesh->draw(activeShader->GetShaderID());
         }
 
@@ -488,7 +502,7 @@ struct Entry{
         // Mesh3D rendering
         activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
         activeShader->Apply(camera);
-        activeShader->setFloat("ambient", AMBIENT_FACTOR);
+        activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
         std::vector<Mesh3D*> transparentMeshes = {};

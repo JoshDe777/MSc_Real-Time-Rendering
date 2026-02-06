@@ -42,6 +42,10 @@ namespace EisEngine{
             static void SetActiveShader(const std::string& shaderName);
             /// \n sets the amount of brightness levels for the toon shader.
             static void SetToonLevelCount(const int& n) {n_toon_levels = n;}
+            static void SetAmbientLevel(const float& val) { ambient = val;}
+            static void SetEta(const Vector3& val) {
+                eta = val;
+            }
         private:
             /// \n Draws a 3D Mesh
             void PrepareDraw(Mesh3D& mesh, Shader* activeShader);
@@ -87,6 +91,8 @@ namespace EisEngine{
             static const std::unordered_map<std::string, std::string> shaderNameDict;
             /// \n the amount of brightness levels available to the toon shader.
             static int n_toon_levels;
+            static Vector3 eta;
+            static float ambient;
         };
     }
 }

@@ -52,23 +52,24 @@ namespace EisEngine::rendering {
         auto camPosLoc = glGetUniformLocation(shaderProgram, "camPos");
         if(camPosLoc != -1)
             setVector("camPos", camera->transform->GetGlobalPosition());
-
         GLCheckError("Shader::Apply::camPos", "ShaderNo." + std::to_string(shaderProgram));
+
+        setInt("image", UniformSamplerIndices::DIFFUSE);
+        setInt("cubeMap", UniformSamplerIndices::CUBEMAP);
+        setInt("backDepthMap", UniformSamplerIndices::DEPTH_BACK_FACE);
+        setInt("frontDepthMap", UniformSamplerIndices::DEPTH_FRONT_FACE);
+        GLCheckError("Shader::Apply::SetSamplerIndices", "ShaderNo." + std::to_string(shaderProgram));
     }
 
     void Shader::ApplyTexture(const Texture2D& texture) const {
         glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DIFFUSE);
         texture.Bind();
-        setInt("image", UniformSamplerIndices::DIFFUSE);
     }
 
     void Shader::ApplyCubemap(const Cubemap& cubemap) const {
-        GLCheckError("[Entering Shader::ApplyCubemap]", "Prior error");
         glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
         cubemap.Bind();
         GLCheckError("Shader::ApplyCubemap::TextureBind", "Shader no. " + std::to_string(shaderProgram));
-        setInt("cubeMap", UniformSamplerIndices::CUBEMAP);
-        GLCheckError("Shader::ApplyCubemap::cubemap val assignment", "Shader no. " + std::to_string(shaderProgram));
     }
 
     void Shader::setMatrix(const std::string &uniformName, glm::mat4 mat4) const {

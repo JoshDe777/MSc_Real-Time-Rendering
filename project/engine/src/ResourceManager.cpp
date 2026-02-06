@@ -384,7 +384,6 @@ namespace EisEngine {
                 texture.imageFormat = GL_RGBA;
             }
 
-            DEBUG_LOG("Texture formats: internal: " + std::to_string(texture.internalFormat) + ", image: " + std::to_string(texture.imageFormat))
             texture.Generate(i, width, height, data);
 
             stbi_image_free(data);
@@ -429,7 +428,7 @@ namespace EisEngine {
         if(compilationStatus.success == GL_FALSE) {
             glGetShaderInfoLog(shaderID, GL_INFO_LOG_LENGTH, nullptr, compilationStatus.infoLog);
             DEBUG_RUNTIME_ERROR( std::string(compilationStatus.shaderName) + " shader compilation failed.\n" +
-                                 std::string(compilationStatus.infoLog))
+                                 std::string(compilationStatus.infoLog) + "\nPath: " + filePath.string())
         }
 
         return shaderID;

@@ -43,14 +43,11 @@ namespace RTR {
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Separator();
         ImGui::SeparatorText("Shininess Parameters");
-        ImGui::SliderFloat("Specular Exponent", &spec, 2.0f, 200.0f);
-        ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Fresnel Factor (F0)", &spec, 0.0f, 3.0f);
+        ImGui::SliderFloat("Absorption Factor", &amb, 0.0f, max_absorption);
         ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
         ImGui::Separator();
-        ImGui::SeparatorText("Light Parameters");
-        ImGui::ColorEdit3("Light Color", &emission.x);
-        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f,  20.0f);
-        ImGui::SliderFloat("Light Speed Modifier", &spd, 0.0f, 100.0f);
+        ImGui::ColorEdit3("Refraction indices (eta)", &emission.x);
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -65,11 +62,13 @@ namespace RTR {
             teapot->setRoughness(roughness);
             teapot->setOpacity(opacity);
         }
-        for(const auto& light: lights){
+        /*for(const auto& light: lights){
             light->SetColor(emission);
             light->SetIntensity(intensity);
             light->SetRotationSpeed(spd);
-        }
+        }*/
         RenderingSystem::SetSpecularFactor(spec);
+        RenderingSystem::SetAmbientLevel(amb);
+        RenderingSystem::SetEta(emission);
     }
 }

@@ -228,8 +228,10 @@ namespace EisEngine {
         mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
 
         // check for embedded texture & error out if not.
-        if (path.length == 0)
+        if (path.length == 0){
+            DEBUG_ERROR("No embedded texture found for material " + std::string(mat->GetName().C_Str()) + ".")
             return GetTexture("default");
+        }
 
         tex = scene->GetEmbeddedTexture(path.C_Str());
         auto textureName = std::string(tex->mFilename.C_Str());

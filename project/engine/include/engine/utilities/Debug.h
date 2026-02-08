@@ -12,7 +12,7 @@
 namespace EisEngine {
     using namespace std;
 
-    enum LogPriority{ DebugP, InfoP, WarnP, ErrorP, FatalP};
+    enum LogPriority{ InfoP, DebugP, WarnP, ErrorP, FatalP};
 
     /**
      * @def DEBUG_INFO(message)

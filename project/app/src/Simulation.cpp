@@ -4,7 +4,7 @@ int n_teapots = 3;
 
 namespace RTR {
     Simulation::Simulation() : Game("RTA Assignment 1") {
-        Debug::SetPriority(LogPriority::ErrorP);
+        Debug::SetPriority(prio);
         airplane = std::make_shared<Airplane>(*this);
 
         camera.transform->SetGlobalPosition(worldOffset);
@@ -24,7 +24,7 @@ namespace RTR {
 
         ImGui::Begin(readonly ? "Airplane Transform [locked]" : "Airplane Transform", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-        if(readonly){
+        if(readonly || inAnim){
             auto transform = airplane->getPlane()->transform;
             posVals = transform->GetLocalPosition();
             rotationVals = transform->GetLocalRotation();
@@ -45,7 +45,7 @@ namespace RTR {
             rotationVals = Vector3(90, rotationVals.y, rotationVals.z);
         }
 
-        if(readonly)
+        if(readonly || inAnim)
             ImGui::EndDisabled();
         else{
             auto transform = airplane->getPlane()->transform;
@@ -58,6 +58,24 @@ namespace RTR {
             readonly = !readonly;
         }
 
+        ImGui::Separator();
+        ImGui::SeparatorText("Animation Settings");
+
+        if(ImGui::Button(airplane->IsLooping() ? "End Anim at last keyframe" : "Enable animation looping"))
+            airplane->ToggleLooping();
+        if(ImGui::Button(airplane->IsPaused() ? "Resume animation" : "Pause animation")){
+            airplane->TogglePlay();
+            inAnim = !airplane->IsPaused();
+        }
+        if(ImGui::Button("Reset anim"))
+            airplane->ResetAnim();
+
+        ImGui::Separator();
+        ImGui::SeparatorText("Interpolation modes");
+        if(ImGui::Button("Raw linear"))
+            airplane->SetAnimMode(AnimMode::RAW);
+        if(ImGui::Button("Uniform linear"))
+            airplane->SetAnimMode(AnimMode::UNIFORM);
 
         ImGui::End();
         ImGui::Render();

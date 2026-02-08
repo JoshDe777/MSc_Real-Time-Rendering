@@ -4,6 +4,7 @@ int n_teapots = 3;
 
 namespace RTR {
     Simulation::Simulation() : Game("RTA Assignment 1") {
+        Debug::SetPriority(LogPriority::ErrorP);
         airplane = std::make_shared<Airplane>(*this);
 
         camera.transform->SetGlobalPosition(worldOffset);
@@ -32,11 +33,18 @@ namespace RTR {
         ImGui::SliderFloat3("World Position", &posVals.x, -100, 10);
         ImGui::SliderFloat3("Euler Rotation", &rotationVals.x, 0.0f, 360);
         ImGui::SliderFloat("Scale", &scale, 0.001f, 2.0f);
+
+        ImGui::Separator();
+        ImGui::SeparatorText("Settings");
         if(ImGui::Button("Reset Transform")){
             posVals = Vector3::zero;
             rotationVals = Vector3::zero;
             scale = 1.0f;
         }
+        if(ImGui::Button("Gimbal Lock Display")){
+            rotationVals = Vector3(90, rotationVals.y, rotationVals.z);
+        }
+
         if(readonly)
             ImGui::EndDisabled();
         else{
@@ -46,7 +54,6 @@ namespace RTR {
             transform->SetLocalScale(Vector3(scale, scale, scale));
         }
 
-        ImGui::Separator();
         if(ImGui::Button(readonly ? "Unlock UI Editing" : "Lock UI Editing")){
             readonly = !readonly;
         }

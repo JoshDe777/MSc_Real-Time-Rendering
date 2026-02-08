@@ -130,6 +130,9 @@ namespace EisEngine {
         }
 
         static void Check_GL_Error(const char* file, int line, const std::string& entityName) {
+            if(Priority < LogPriority::ErrorP)
+                return;
+
             GLenum error = glGetError();
             std::string time = GetTime();
 
@@ -146,12 +149,17 @@ namespace EisEngine {
                 SetConsoleTextAttribute(hConsole, 7);
             }
         }
+
+        static void SetPriority(LogPriority val) {Priority = val;}
     private:
         /// \n Compiles the log info to a message in the console.
         static void CreateLog(LogPriority priority,
                               const char* file,
                               int line,
                               const std::string &message){
+            if(priority < Priority)
+                return;
+
             HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
             std::string time = GetTime();
@@ -223,5 +231,7 @@ namespace EisEngine {
                 std::setw(2) << std::setfill('0') << to_string(time[2]);
             return ss.str();
         }
+
+        static LogPriority Priority;
     };
 }

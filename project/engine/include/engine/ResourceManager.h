@@ -18,7 +18,15 @@ namespace fs = std::filesystem;
 namespace EisEngine {
     inline fs::path resolveAssetPath(const fs::path &relativeAssetPath) {
         auto mergedPath = (GET_DIR(ASSET_ROOT) / relativeAssetPath).make_preferred();
-        return fs::canonical(mergedPath);
+        fs::path path;
+        try{
+            path = fs::canonical(mergedPath);
+        }
+        catch(exception& e){
+            DEBUG_ERROR("Couldn't resolve file " + mergedPath.string())
+            return fs::path("Invalid");
+        }
+        return path;
     }
 
     /// \n Struct used to debug shader creation.

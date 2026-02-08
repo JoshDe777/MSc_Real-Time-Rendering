@@ -15,7 +15,7 @@ namespace EisEngine::rendering {
 
         glValidateProgram(shaderProgram);
 
-        GLCheckError("Shader::Shader", "Shader no." + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
 
         GLint status;
         glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &status);
@@ -43,33 +43,34 @@ namespace EisEngine::rendering {
 
     void Shader::Apply(Camera* camera) {
         glUseProgram(shaderProgram);
-        GLCheckError("Shader::Apply::glUseProgram", "ShaderNo." + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
         vpMatrix = camera->GetVPMatrix();
         auto mvpLoc = glGetUniformLocation(shaderProgram, "mvp");
         if(mvpLoc != -1)
             setMatrix("mvp", vpMatrix);
-        GLCheckError("Shader::Apply::mvp", "ShaderNo." + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
         auto camPosLoc = glGetUniformLocation(shaderProgram, "camPos");
         if(camPosLoc != -1)
             setVector("camPos", camera->transform->GetGlobalPosition());
-        GLCheckError("Shader::Apply::camPos", "ShaderNo." + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
 
         setInt("image", UniformSamplerIndices::DIFFUSE);
         setInt("cubeMap", UniformSamplerIndices::CUBEMAP);
         setInt("backDepthMap", UniformSamplerIndices::DEPTH_BACK_FACE);
         setInt("frontDepthMap", UniformSamplerIndices::DEPTH_FRONT_FACE);
-        GLCheckError("Shader::Apply::SetSamplerIndices", "ShaderNo." + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
     }
 
     void Shader::ApplyTexture(const Texture2D& texture) const {
         glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DIFFUSE);
         texture.Bind();
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
     }
 
     void Shader::ApplyCubemap(const Cubemap& cubemap) const {
         glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
         cubemap.Bind();
-        GLCheckError("Shader::ApplyCubemap::TextureBind", "Shader no. " + std::to_string(shaderProgram));
+        DEBUG_OPENGL("Shader no. " + std::to_string(shaderProgram))
     }
 
     void Shader::setMatrix(const std::string &uniformName, glm::mat4 mat4) const {

@@ -15,6 +15,7 @@ int RenderingSystem::n_toon_levels = 8;
 const std::string RenderingSystem::defaultShader = "Blinn-Phong";
 std::string RenderingSystem::active3DShader = "Blinn-Phong";
 const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
+        {"Unlit", "Default Shader"},
         {"Blinn-Phong", "Blinn-Phong Shader"},
         {"Cook-Torrance", "Cook-Torrance Shader"},
         {"Toon", "Toon Shader"},
@@ -205,6 +206,7 @@ struct Entry{
         ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
                                                  "shaders/frag-sprite_unlit.frag",
                                                  "UI Shader");
+
         // generate Blinn-Phong shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-blinn_phong.frag",
@@ -477,7 +479,7 @@ struct Entry{
         if(skybox != nullptr){
             glDisable(GL_CULL_FACE);
 
-            GLCheckError("[Entering Skybox Rendering]", "[Previous Program/Entity]");
+            DEBUG_OPENGL("Unknown")
             activeShader = ResourceManager::GetShader("Skybox Shader");
             activeShader->Apply(camera);
 
@@ -508,22 +510,26 @@ struct Entry{
         std::vector<Mesh3D*> transparentMeshes = {};
 
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
+            int meshCounter = 0;
             engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){
                 // don't render skybox object.
-                if(skybox != nullptr && *mesh.entity() == *skybox)
+                if(skybox != nullptr && *mesh.entity() == *skybox){
                     return;
+                }
 
-                auto renderer = mesh.entity()->GetComponent<Renderer>();
+                /*auto renderer = mesh.entity()->GetComponent<Renderer>();
                 // early exit if transparent mesh (separate shaders).
                 if(renderer && renderer->material->GetOpacity() != 1.0f){
                     transparentMeshes.emplace_back(&mesh);
                     return;
-                }
+                }*/
 
                 // no fbos
                 PrepareDraw(mesh, activeShader);
                 mesh.draw(activeShader->GetShaderID());
+                meshCounter++;
             });
+            //DEBUG_INFO("Ending Draw() having displayed " + std::to_string(meshCounter) + " objects.")
         }
 
         if(!transparentMeshes.empty()){

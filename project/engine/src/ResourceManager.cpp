@@ -227,9 +227,7 @@ namespace EisEngine {
         else if (path.length == 0)
             return GetTexture("default");
         else {
-            DEBUG_INFO(path.C_Str())
             auto texPath = fs::path(modelPath.string() + "\\" + path.C_Str());
-            DEBUG_LOG(texPath.string())
             return GetTexture("default"); // GenerateTextureFromFile(texPath, path.C_Str());
         }
         auto textureName = std::string(tex->mFilename.C_Str());

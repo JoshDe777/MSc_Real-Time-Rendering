@@ -88,6 +88,6 @@ namespace EisEngine::systems {
         CameraMode mode = PERSPECTIVE;
 
         /// \n updates the aspect ratio to width/height.
-        void UpdateAspectRatio() { aspectRatio = (float) m_screenWidth / (float) m_screenHeight; }
+        void UpdateAspectRatio() { aspectRatio = m_screenHeight != 0 ? (float) m_screenWidth / (float) m_screenHeight : -1; }
     };
 }

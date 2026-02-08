@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include <OpenGL/OpenGlInclude.h>
 
 namespace EisEngine {
@@ -71,6 +72,17 @@ namespace EisEngine {
     #define DEBUG_RUNTIME_ERROR(message) Debug::RuntimeError(__FILE__, __LINE__, message);
     #endif
 
+    /**
+     * @def DEBUG_OPENGL(entityName)
+     *
+     * Logs an error message indicating the file and line number where the macro is called.
+     *
+     * @param entityName - std::string: An identifier to the entity potentially triggering the error.
+     */
+#ifndef DEBUG_OPENGL
+#define DEBUG_OPENGL(entityName) Debug::Check_GL_Error(__FILE__, __LINE__, entityName);
+#endif
+
     /// \n {DEPRECATED} A utility class used for debugging purposes -
     /// provides more practical console inputs than the standard library's console interactions.\n
     /// \n Deprecated - use provided macros instead (DEBUG_LOG(message) instead of
@@ -115,6 +127,24 @@ namespace EisEngine {
         /// @param err - the error message to be displayed.
         static void RuntimeError(const char* file, int line, const std::string &err){
             CreateLog(FatalP, file, line, err);
+        }
+
+        static void Check_GL_Error(const char* file, int line, const std::string& entityName) {
+            GLenum error = glGetError();
+            std::string time = GetTime();
+
+            if (error != GL_NO_ERROR) {
+                HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+                SetConsoleTextAttribute(hConsole, 12);
+
+                std::stringstream logStream;
+                logStream << "["<< file <<"("<< line << ")]:\n";
+                logStream << "[OpenGL Error ("<< entityName << ")] - (" << time << "): ";
+                logStream << std::to_string(error);
+
+                std::cout << logStream.str() << std::endl;
+                SetConsoleTextAttribute(hConsole, 7);
+            }
         }
     private:
         /// \n Compiles the log info to a message in the console.
@@ -185,13 +215,13 @@ namespace EisEngine {
 
         /// \n Converts an array of time values to a string displaying hh:mm:ss.
         static std::string CompileTimeToString(const std::array<int, 3> &time)
-        { return to_string(time[0]) + ":" + to_string(time[1]) + ":" + to_string(time[2]);}
-    };
-
-    inline void GLCheckError(const char* context, const std::string& entityName) {
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR) {
-            DEBUG_ERROR("OpenGL Error [" + entityName + "::" + std::string(context) + "]: " + std::to_string(error))
+        {
+            std::stringstream ss;
+            ss <<
+                std::setw(2) << std::setfill('0') << to_string(time[0]) << ":" <<
+                std::setw(2) << std::setfill('0') << to_string(time[1]) << ":" <<
+                std::setw(2) << std::setfill('0') << to_string(time[2]);
+            return ss.str();
         }
-    }
+    };
 }

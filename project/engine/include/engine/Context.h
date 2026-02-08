@@ -4,6 +4,7 @@
 #include <functional>
 #include <OpenGL/OpenGlInclude.h>
 #include "engine/utilities/Vector2.h"
+#include "engine/utilities/Color.h"
 
 namespace EisEngine::ctx {
     /// \n A class handling all the relevant background information of a game.
@@ -36,6 +37,8 @@ namespace EisEngine::ctx {
             glfwGetWindowSize(window, &width, &height);
             return Vector2(width, height);
         }
+
+        static void SetClearColor(const Color& newColor) { m_clearColor = newColor;}
     private:
         /// \n Initializes OpenGL window parameters.
         static void InitializeGLFW();
@@ -49,5 +52,6 @@ namespace EisEngine::ctx {
         GLFWwindow *window = nullptr;
         /// \n Initializes and loads ImGUI
         void LoadImGUI();
+        static Color m_clearColor;
     };
 }

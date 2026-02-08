@@ -1,9 +1,13 @@
 #version 460 core
 
-uniform vec4 diffuse;
+in vec2 TexCoords;
+
+uniform sampler2D image;
+uniform vec3 diffuse;
+uniform float alpha;
 
 out vec4 fragColor;
 
 void main() {
-    fragColor = diffuse;
+    fragColor = vec4(diffuse , 1.0);
 }

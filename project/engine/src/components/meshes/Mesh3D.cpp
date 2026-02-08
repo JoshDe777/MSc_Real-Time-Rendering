@@ -9,6 +9,7 @@ namespace EisEngine::components {
         glGenBuffers(1, &buffer);
         glBindBuffer(bufferType, buffer);
         glBufferData(bufferType, bufferData.size() * sizeof(T), bufferData.data(), GL_STATIC_DRAW);
+        DEBUG_OPENGL("Unknown")
         return buffer;
     }
 
@@ -35,8 +36,7 @@ namespace EisEngine::components {
         glBufferSubData(GL_ARRAY_BUFFER, offset, nsize, normals.data());
         offset += nsize;
         glBufferSubData(GL_ARRAY_BUFFER, offset, uvsize, uvs.data());
-
-        GLCheckError("Mesh3D::CreateVBO", "Primitive");
+        DEBUG_OPENGL("Unknown")
 
         return buffer;
     }
@@ -66,7 +66,7 @@ namespace EisEngine::components {
 
     void Mesh3D::draw(const unsigned int& shaderProgram) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        GLCheckError("Mesh3D::DrawElements::VBO Binding", entity()->name());
+        DEBUG_OPENGL(entity()->name())
         unsigned long long offset = 0;
 
         // draw vertices
@@ -75,7 +75,7 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(vpos);
             glVertexAttribPointer(vpos, 3, GL_FLOAT, GL_FALSE,
                                   0, nullptr);
-            GLCheckError("Mesh3D::DrawElements::vertices", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
         offset = primitive.GetVertexCount() * sizeof(glm::vec3);
 
@@ -85,7 +85,7 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(norm);
             glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE,
                                   0, (GLvoid*)offset);
-            GLCheckError("Mesh3D::DrawElements::normals", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
         offset += primitive.GetNormalsCount() * sizeof(glm::vec3);
 
@@ -95,13 +95,13 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(uv);
             glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE,
                                   0, (GLvoid*)offset);
-            GLCheckError("Mesh3D::DrawElements::uvs", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        GLCheckError("Mesh3D::DrawElements::indices", entity()->name());
+        DEBUG_OPENGL(entity()->name())
 
         glDrawElements(GL_TRIANGLES, primitive.indexCount, GL_UNSIGNED_INT, nullptr);
-        GLCheckError("Mesh3D::DrawElements", entity()->name());
+        DEBUG_OPENGL(entity()->name())
     }
 }

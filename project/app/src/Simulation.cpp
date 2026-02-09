@@ -25,7 +25,7 @@ namespace RTR {
         ImGui::Begin(readonly ? "Airplane Transform [locked]" : "Airplane Transform", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
         if(readonly || inAnim){
-            auto transform = airplane->getPlane()->transform;
+            auto transform = airplane->getAnimPlane()->transform;
             posVals = transform->GetLocalPosition();
             rotationVals = transform->GetLocalRotation();
             ImGui::BeginDisabled();
@@ -56,6 +56,11 @@ namespace RTR {
 
         if(ImGui::Button(readonly ? "Unlock UI Editing" : "Lock UI Editing")){
             readonly = !readonly;
+            if(!readonly){
+                auto transform = airplane->getPlane()->transform;
+                posVals = transform->GetLocalPosition();
+                rotationVals = transform->GetLocalRotation();;
+            }
         }
 
         ImGui::Separator();
@@ -69,6 +74,8 @@ namespace RTR {
         }
         if(ImGui::Button("Reset anim"))
             airplane->ResetAnim();
+        ImGui::SliderFloat("Uniform Animation Speed", &animSpd, 0.0f, 10.0f);
+        airplane->SetAnimSpeed(animSpd);
 
         ImGui::Separator();
         ImGui::SeparatorText("Interpolation modes");
@@ -76,6 +83,8 @@ namespace RTR {
             airplane->SetAnimMode(AnimMode::RAW);
         if(ImGui::Button("Uniform linear"))
             airplane->SetAnimMode(AnimMode::UNIFORM);
+        if(ImGui::Button(airplane->IsRotationEnabled() ? "Disable Rotation" : "Enable Rotation"))
+            airplane->ToggleRotation();
 
         ImGui::End();
         ImGui::Render();

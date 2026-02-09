@@ -2,25 +2,27 @@
 
 namespace RTR {
     Airplane::Airplane(EisEngine::Game &game) {
+        auto parent = &game.entityManager.createEntity("AirplaneParent");
         auto entity = ResourceManager::Load3DObject(game, assetPath);
+        public_plane = static_cast<shared_ptr<Entity>>(parent);
         plane = static_cast<shared_ptr<Entity>>(entity);
-        plane->transform->SetLocalRotation(rotationOffsets);
+        plane->transform->SetParent(parent->transform);
         for(auto child: plane->transform->getChildren()){
-            DEBUG_LOG("Plane object name is " + plane->name() + " (expecting RootNode).")
+            child->SetLocalRotation(hiddenRotOffset);
         }
 
         // init keyframes as a tuple of <pos, fwdDir>
         keyFrames = {
-            {Vector3::zero * AnimPosScale, Vector3(-1, 0, 0)},
-            {Vector3(-10, 5, 0) * AnimPosScale, Vector3(-2.0f/3, 1.0f/3, 0)},
-            {Vector3(-5, 10, -2) * AnimPosScale, Vector3(2.0f, 0, -1.0f/3)},
-            {Vector3(0, 6, -5) * AnimPosScale, Vector3(0, -1, 0)},
-            {Vector3(-5, 1, -5) * AnimPosScale, Vector3(-1, 0, 0)},
-            {Vector3(-15, 5, 0) * AnimPosScale, Vector3(0, 1.0f/3, 2.0f/3)},
-            {Vector3(5, 10, 10) * AnimPosScale, Vector3(4.0f/5, 1.0f/5, 0)},
-            {Vector3(15, 15, 5) * AnimPosScale, Vector3(1.0f/6, 2.0f/6, -1.0f/6)},
-            {Vector3(15, 20, 0) * AnimPosScale, Vector3(-1, 0, 0)},
-            {Vector3(10, 10, 0) * AnimPosScale, Vector3(-1.0f/5, -4.0f/5, 0)}
+            {Vector3::zero * AnimPosScale, Vector3::zero},
+            {Vector3(-10, 5, 0) * AnimPosScale, Vector3(0, 0, -60)},
+            {Vector3(-5, 10, -2) * AnimPosScale, Vector3(45, 0, 180)},
+            {Vector3(0, 6, -5) * AnimPosScale, Vector3(0, 0, 270)},
+            {Vector3(-5, 1, -5) * AnimPosScale, Vector3::zero},
+            {Vector3(-15, 5, 0) * AnimPosScale, Vector3(0, 90, 45)},
+            {Vector3(5, 10, 10) * AnimPosScale, Vector3(0, 180, 45)},
+            {Vector3(15, 15, 5) * AnimPosScale, Vector3(-45, 270, 60)},
+            {Vector3(15, 20, 0) * AnimPosScale, Vector3(0, 0, 0)},
+            {Vector3(10, 10, 0) * AnimPosScale, Vector3(0, 0, -45)}
         };
         activeKeyframes = std::pair<int, int>(-1, 0);
         UpdateKeyframes();
@@ -49,11 +51,8 @@ namespace RTR {
 
         // rotation interpolation.
         // store current rotation & calculate target rotation
-        startRotation = Quaternion::FromEulerXYZ(plane->transform->GetLocalRotation());
-        targetRotation = Quaternion::GetRotationToTarget(
-                plane->transform->Forward(),
-                keyFrames[activeKeyframes.second].second
-            );
+        startRotation = Quaternion::FromEulerXYZ(keyFrames[activeKeyframes.first].second);
+        targetRotation = Quaternion::FromEulerXYZ(keyFrames[activeKeyframes.second].second);
     }
 
     void Airplane::ResetAnim() {
@@ -61,6 +60,7 @@ namespace RTR {
         animProgress = 1.0f;
         activeKeyframes = std::pair<int, int>(-1, 0);
         plane->transform->SetLocalPosition(Vector3::zero);
+        plane->transform->SetLocalRotation(Vector3::zero);
     }
 
     void Airplane::Animate() {
@@ -74,6 +74,9 @@ namespace RTR {
         auto v = GetAnimSpeed();
         animProgress = Math::Clamp(animProgress + v * Time::deltaTime, 0.0f, 1.0f);
         plane->transform->SetLocalPosition(keyFrames[activeKeyframes.first].first + animProgress * currentDir);
+
+        if(noRot)
+            return;
 
         auto rot = Quaternion::Lerp(startRotation, targetRotation, animProgress);
         plane->transform->SetLocalRotation(rot.ToEulerXYZ());

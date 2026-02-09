@@ -229,7 +229,7 @@ namespace EisEngine {
 
         // check for embedded texture & error out if not.
         if (path.length == 0){
-            DEBUG_ERROR("No embedded texture found for material " + std::string(mat->GetName().C_Str()) + ".")
+            DEBUG_WARN("No embedded texture found for material " + std::string(mat->GetName().C_Str()) + ".")
             return GetTexture("default");
         }
 

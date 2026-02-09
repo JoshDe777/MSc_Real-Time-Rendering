@@ -8,7 +8,7 @@ namespace EisEngine{
     float Vector3::magnitude() const
     { return (float) sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));}
 
-    Vector3 Vector3::normalized() const { return (*this * (1/ this->magnitude()));}
+    Vector3 Vector3::normalized() const { return this->magnitude() > 0 ? (*this * (1/ this->magnitude())) : Vector3::zero;}
 
     Vector3 Vector3::ClampMagnitude(const float& minMagnitude, const float& maxMagnitude) {
         float currentMagnitude = magnitude();

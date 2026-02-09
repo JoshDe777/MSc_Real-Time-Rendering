@@ -46,7 +46,7 @@ namespace RTR {
         renderer->material->SetDiffuse(Color::white);
         renderer->material->SetMetallic(1.0f);
         renderer->material->SetRoughness(0.7f);
-        renderer->material->SetOpacity(0.1f);
+        //renderer->material->SetOpacity(0.1f);
 
         game.onUpdate.addListener([&](Game& game){
             rotate();

@@ -27,8 +27,9 @@ namespace EisEngine {
 #pragma region 3D asset import
     /// \n Imports mesh data (vertices, normals, indices and UVs) from an assimp mesh.
     PrimitiveMesh3D ImportMesh(const aiMesh* mesh){
+        auto nVerts = mesh->mNumVertices;
         // vertex collection -> take aiMesh's array of vertices and convert to own format of Vec3's
-        std::vector<Vector3> vertices(mesh->mVertices, mesh->mVertices + mesh->mNumVertices);
+        std::vector<Vector3> vertices(mesh->mVertices, mesh->mVertices + nVerts);
 
         // index collection -> iterate through faces & insert the indices for each triangle.
         std::vector<unsigned int> indices = {};
@@ -44,21 +45,42 @@ namespace EisEngine {
 
         // normals collection -> same process as vertex collection
         // (mNormals is always of length mNumVertices, hence the use).
-        std::vector<Vector3> normals(mesh->mNormals, mesh->mNormals + mesh->mNumVertices);
+        std::vector<Vector3> normals(mesh->mNormals, mesh->mNormals + nVerts);
 
         // UV map collection - only collecting from the first channel.
         std::vector<Vector2> uvs;
-        uvs.reserve(mesh->mNumVertices);
+        uvs.reserve(nVerts);
         if(mesh->HasTextureCoords(0)){
-            for(auto i = 0; i < mesh->mNumVertices; i++){
+            for(auto i = 0; i < nVerts; i++){
                 const auto& uv = mesh->mTextureCoords[0][i];
                 uvs.emplace_back(uv);
             }
         }
         else    // if no built-in UVs, give each vertex a texture coord of (0, 0)
-            uvs.assign(mesh->mNumVertices, Vector2(0, 0));
+            uvs.assign(nVerts, Vector2(0, 0));
 
-        return PrimitiveMesh3D(vertices, indices, &normals, &uvs);
+        std::vector<Vector3> tans;
+        tans.reserve(nVerts);
+        for(auto i = 0; i < nVerts; i++){
+            const auto& tan = mesh->mTangents[i];
+            tans.emplace_back(tan);
+        }
+
+        std::vector<Vector3> bitans;
+        bitans.reserve(nVerts);
+        for(auto i = 0; i < nVerts; i++){
+            const auto& bitan = mesh->mBitangents[i];
+            bitans.emplace_back(bitan);
+        }
+
+        return PrimitiveMesh3D(
+                vertices,
+                indices,
+                &normals,
+                &uvs,
+                &tans,
+                &bitans
+            );
     }
 
     void ResourceManager::ImportNode(Game& game, const aiNode* node,
@@ -120,8 +142,13 @@ namespace EisEngine {
         // import the asset with a few optimizations for efficiency:
         // meshes triangulated & optimized, normals generated if not exist, and tangents calculated for normals.
         const aiScene* scene = importer.ReadFile(
-                pathString.c_str(), aiProcess_Triangulate | aiProcess_GenNormals |
-                                    aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_CalcTangentSpace);
+                pathString.c_str(),
+                aiProcess_Triangulate |
+                aiProcess_GenNormals |
+                aiProcess_OptimizeMeshes |
+                aiProcess_JoinIdenticalVertices |
+                aiProcess_CalcTangentSpace
+            );
 
         // exit with an error message if scene loading failed
         // (scene = nullptr, scene flagged incomplete, or no root node).
@@ -318,10 +345,32 @@ namespace EisEngine {
         return GetTexture("default");
     }
 
+    Texture2D *ResourceManager::MakeDummyNormalMap() {
+        if(Textures["default_normal"] == nullptr){
+            Texture2D texture;
+
+            int width = 1;
+            int height = 1;
+            unsigned char data[4] = {0, 0, 255, 255};
+
+            texture.internalFormat = GL_RGBA;
+            texture.imageFormat = GL_RGBA;
+
+            texture.Generate(width, height, data);
+            Textures["default_normal"] = std::make_unique<Texture2D>(texture);
+        }
+        else
+            DEBUG_WARN("Attempting to overwrite texture 'default_normal'.")
+        return GetTexture("default_normal");
+    }
+
     Texture2D *ResourceManager::GetTexture(const std::string &name) {
         // always have a default texture at the ready
         if(name == "default" && !Textures["default"].get())
             return MakeDummyTexture();
+
+        if(name == "default_normal" && !Textures["default_normal"].get())
+            return MakeDummyNormalMap();
 
         if(Textures.empty()){
             DEBUG_WARN("No textures created in resource manager system.")

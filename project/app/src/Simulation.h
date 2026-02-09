@@ -14,7 +14,7 @@ namespace RTR {
         shared_ptr<Entity> light_source = nullptr;
         std::vector<shared_ptr<Teapot>> pots = {};
         std::vector<shared_ptr<Light>> lights = {};
-        shared_ptr<Skybox> skybox = nullptr;
+        //shared_ptr<Skybox> skybox = nullptr;
         Vector3 worldOffset = Vector3(0, -2, 10);
         float spec = 1.0f;
         float amb = 0.3f;

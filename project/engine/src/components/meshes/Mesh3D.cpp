@@ -25,18 +25,29 @@ namespace EisEngine::components {
         auto nsize = normals.size() * sizeof(glm::vec3);
         const auto& uvs = Vec2VectorToGlm(primitive.GetUVs());
         auto uvsize = uvs.size() * sizeof(glm::vec2);
-        auto total_buffer_size = GLsizeiptr(vsize + nsize + uvsize);
+        const auto& tans = Vec3VectorToGlm(primitive.GetTangents());
+        auto tansize = tans.size() * sizeof(glm::vec3);
+        const auto& bitans = Vec3VectorToGlm(primitive.GetBitangents());
+        auto bitansize = bitans.size() * sizeof(glm::vec3);
+        auto total_buffer_size = GLsizeiptr(vsize + nsize + uvsize + tansize + bitansize);
 
         // buffer population
         glBufferData(GL_ARRAY_BUFFER, total_buffer_size, nullptr, GL_STATIC_DRAW);
         long long offset = 0;
         glBufferSubData(GL_ARRAY_BUFFER, offset, vsize, vertices.data());
+        DEBUG_OPENGL("Vertices")
         offset += vsize;
         glBufferSubData(GL_ARRAY_BUFFER, offset, nsize, normals.data());
+        DEBUG_OPENGL("Normals")
         offset += nsize;
         glBufferSubData(GL_ARRAY_BUFFER, offset, uvsize, uvs.data());
-
-        GLCheckError("Mesh3D::CreateVBO", "Primitive");
+        DEBUG_OPENGL("UVs")
+        offset += uvsize;
+        glBufferSubData(GL_ARRAY_BUFFER, offset, tansize, tans.data());
+        DEBUG_OPENGL("Tangents")
+        offset += tansize;
+        glBufferSubData(GL_ARRAY_BUFFER, offset, bitansize, bitans.data());
+        DEBUG_OPENGL("Bitangents")
 
         return buffer;
     }
@@ -66,8 +77,9 @@ namespace EisEngine::components {
 
     void Mesh3D::draw(const unsigned int& shaderProgram) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        GLCheckError("Mesh3D::DrawElements::VBO Binding", entity()->name());
+        DEBUG_OPENGL(entity()->name())
         unsigned long long offset = 0;
+        auto nVerts = primitive.GetVertexCount();
 
         // draw vertices
         auto vpos = glGetAttribLocation(shaderProgram, "aPos");
@@ -75,9 +87,9 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(vpos);
             glVertexAttribPointer(vpos, 3, GL_FLOAT, GL_FALSE,
                                   0, nullptr);
-            GLCheckError("Mesh3D::DrawElements::vertices", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
-        offset = primitive.GetVertexCount() * sizeof(glm::vec3);
+        offset = nVerts * sizeof(glm::vec3);
 
         // add normals
         auto norm = glGetAttribLocation(shaderProgram, "normal");
@@ -85,9 +97,9 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(norm);
             glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE,
                                   0, (GLvoid*)offset);
-            GLCheckError("Mesh3D::DrawElements::normals", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
-        offset += primitive.GetNormalsCount() * sizeof(glm::vec3);
+        offset += nVerts * sizeof(glm::vec3);
 
         // add uvs
         auto uv = glGetAttribLocation(shaderProgram, "texCoords");
@@ -95,13 +107,34 @@ namespace EisEngine::components {
             glEnableVertexAttribArray(uv);
             glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE,
                                   0, (GLvoid*)offset);
-            GLCheckError("Mesh3D::DrawElements::uvs", entity()->name());
+            DEBUG_OPENGL(entity()->name())
         }
+        offset += nVerts * sizeof(glm::vec2);
+
+        // add tangents
+        auto tan = glGetAttribLocation(shaderProgram, "tan");
+        if(tan != -1){
+            glEnableVertexAttribArray(tan);
+            glVertexAttribPointer(tan, 3, GL_FLOAT, GL_FALSE,
+                                  0, (GLvoid*)offset);
+            DEBUG_OPENGL(entity()->name())
+        }
+        offset += nVerts * sizeof(glm::vec3);
+
+        // add bitangents
+        auto bitan = glGetAttribLocation(shaderProgram, "bitan");
+        if(bitan != -1){
+            glEnableVertexAttribArray(bitan);
+            glVertexAttribPointer(bitan, 2, GL_FLOAT, GL_FALSE,
+                                  0, (GLvoid*)offset);
+            DEBUG_OPENGL(entity()->name())
+        }
+        //offset += nVerts * sizeof(glm::vec3);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        GLCheckError("Mesh3D::DrawElements::indices", entity()->name());
+        DEBUG_OPENGL(entity()->name())
 
         glDrawElements(GL_TRIANGLES, primitive.indexCount, GL_UNSIGNED_INT, nullptr);
-        GLCheckError("Mesh3D::DrawElements", entity()->name());
+        DEBUG_OPENGL(entity()->name())
     }
 }

@@ -9,32 +9,55 @@ struct PointLight{
     float I;
 };
 
-// Vertex Shader Input
+// VS inputs
 in vec3 fragPos;
-in vec3 fragNormal;
 in vec2 TexCoords;
+in vec3 fragNormal;
+in vec3 fragTan;
+in vec3 fragBitan;
 
-// Material x Texture Input
-uniform sampler2D image;
-uniform float tiling;
+// vec3s
 uniform vec3 diffuse;
+uniform vec3 camPos;
+
+// floats
+uniform float tiling;       // -------------- MATERIAL DATA --------------
 uniform float alpha;
 uniform float metallic;
 uniform float roughness;
+uniform float ambient;      // -------------- WORLD DATA --------------
+uniform float specular;
+
+// sampler2Ds
+uniform sampler2D image;
+uniform sampler2D nMap;
 
 // Lighting-related Input
 uniform PointLight[MAX_LIGHTS] lights;
 uniform int nLights;
-uniform float ambient;
-uniform float specular;
-uniform vec3 camPos;
 uniform int LOD;
 
+// output(s)
 out vec4 fragColor;
+
+vec3 getNormalInWorldSpace(){
+    // bump val to [-1, 1] for negative displacement (craters)
+    vec3 mapNormal = texture(nMap, TexCoords).xyz;
+    mapNormal = normalize(2 * (mapNormal - vec3(0.5)));
+
+    vec3 normal = normalize(fragNormal);
+    vec3 tan = normalize(fragTan);
+    vec3 bitan = normalize(fragBitan);
+
+    mat3 tanSpaceMat = mat3(tan, bitan, normal);
+
+    return normalize(tanSpaceMat * mapNormal);
+}
 
 vec3 calculateFragColor(vec4 base){
     vec3 result = ambient * base.xyz;
-    vec3 normal = normalize(fragNormal);
+    // calculate normal accounting for nMap
+    vec3 normal = getNormalInWorldSpace();
     // apply diffuse and specular changes for each light affecting the object.
     for(int i = 0; i < nLights; i++){
         PointLight light = lights[i];

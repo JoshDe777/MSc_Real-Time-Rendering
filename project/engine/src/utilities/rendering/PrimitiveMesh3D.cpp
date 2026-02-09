@@ -44,16 +44,42 @@ namespace EisEngine::rendering {
         return result;
     }
 
+    std::vector<glm::vec3> InitTans(const std::vector<Vector3>* tans, const int& vCount){
+        std::vector<glm::vec3> result = {};
+        // if object has no tangents, default to (1, 0, 0)
+        if(!tans)
+            for(auto i = 0; i < vCount; i++)
+                result.emplace_back(1, 0, 0);
+        else
+            result = Vector3ToGlmVector(*tans);
+
+        return result;
+    }
+
+    std::vector<glm::vec3> InitBitans(const std::vector<Vector3>* bitans, const int& vCount){
+        std::vector<glm::vec3> result = {};
+        // if object has no tangents, default to (0, 0, 1)
+        if(!bitans)
+            for(auto i = 0; i < vCount; i++)
+                result.emplace_back(0, 0, 1);
+        else
+            result = Vector3ToGlmVector(*bitans);
+
+        return result;
+    }
+
     PrimitiveMesh3D::PrimitiveMesh3D(const std::vector<Vector3> &shapeVertices,
                                      const std::vector<unsigned int> &shapeIndices,
                                      const std::vector<Vector3>* shapeNormals,
-                                     const std::vector<Vector2>* shapeUVs) :
+                                     const std::vector<Vector2>* shapeUVs,
+                                     const std::vector<Vector3>* shapeTangents,
+                                     const std::vector<Vector3>* shapeBitangents) :
                                      vertices(Vector3ToGlmVector(shapeVertices)),
                                      normals(InitNormals(shapeNormals, (int) shapeVertices.size())),
                                      uvs(InitUVs(shapeUVs, (int) shapeVertices.size())),
+                                     tangents(InitTans(shapeTangents, (int) shapeVertices.size())),
+                                     bitangents(InitBitans(shapeBitangents, (int) shapeVertices.size())),
                                      nVerts(shapeVertices.size()),
-                                     nNormals(shapeNormals ? shapeNormals->size() : 0),
-                                     nUVs(shapeUVs ? shapeUVs->size() : 0),
                                      PrimitiveMesh(shapeVertices, shapeIndices) {}
 
     std::vector<Vector3> PrimitiveMesh3D::GetVertices() const {
@@ -76,6 +102,22 @@ namespace EisEngine::rendering {
         std::vector<Vector2> result = {};
         result.reserve(uvs.size());
         for(auto i : uvs)
+            result.emplace_back(i);
+        return result;
+    }
+
+    std::vector<Vector3> PrimitiveMesh3D::GetTangents() const {
+        std::vector<Vector3> result = {};
+        result.reserve(tangents.size());
+        for(auto i : tangents)
+            result.emplace_back(i);
+        return result;
+    }
+
+    std::vector<Vector3> PrimitiveMesh3D::GetBitangents() const {
+        std::vector<Vector3> result = {};
+        result.reserve(bitangents.size());
+        for(auto i : bitangents)
             result.emplace_back(i);
         return result;
     }

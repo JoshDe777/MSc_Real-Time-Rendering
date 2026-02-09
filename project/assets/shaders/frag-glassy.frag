@@ -9,37 +9,57 @@ struct PointLight{
     float I;
 };
 
-// Vertex Shader Input
+// VS inputs
 in vec3 fragPos;
-in vec3 fragNormal;
 in vec2 TexCoords;
+in vec3 fragNormal;
+in vec3 fragTan;
+in vec3 fragBitan;
 
-// Material x Texture Input
-uniform sampler2D image;
-uniform sampler2D backDepthMap;
-uniform sampler2D frontDepthMap;
-uniform samplerCube cubeMap;
-uniform float tiling;
+// Vec3s
 uniform vec3 diffuse;
+uniform vec3 eta;
+uniform vec3 camPos;
+
+// floats
+uniform float tiling;
 uniform float alpha;
 uniform float metallic;
 uniform float roughness;
-
-// Lighting-related Input
-uniform vec3 eta;
 uniform float ambient;
 uniform float specular;
-uniform vec3 camPos;
-uniform int LOD;
 
+// integers
 uniform int screenWidth;
 uniform int screenHeight;
 
+// Samplers
+uniform sampler2D image;
+uniform sampler2D nMap;
+uniform samplerCube cubeMap;
+uniform sampler2D backDepthMap;
+uniform sampler2D frontDepthMap;
+
+// output(s)
 out vec4 fragColor;
+
+vec3 getNormalInWorldSpace(){
+    vec3 mapNormal = texture(nMap, TexCoords).xyz;
+    mapNormal = normalize(2 * (mapNormal - vec3(0.5)));
+
+    vec3 normal = normalize(fragNormal);
+    vec3 tan = normalize(fragTan);
+    vec3 bitan = normalize(fragBitan);
+
+    mat3 tanSpaceMat = mat3(tan, bitan, normal);
+
+    return normalize(tanSpaceMat * mapNormal);
+}
 
 vec3 calculateFragColor(vec4 base){
     // establish reflection dir [reflect(-view, normal)]
-    vec3 normal = normalize(fragNormal);
+    // calculate normal accounting for nMap
+    vec3 normal = getNormalInWorldSpace();
     vec3 view = normalize(camPos - fragPos);
     vec3 reflectionDir = reflect(-view, normal);
     vec3 reflection = texture(cubeMap, reflectionDir).xyz;

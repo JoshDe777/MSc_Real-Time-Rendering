@@ -477,7 +477,7 @@ struct Entry{
         if(skybox != nullptr){
             glDisable(GL_CULL_FACE);
 
-            GLCheckError("[Entering Skybox Rendering]", "[Previous Program/Entity]");
+            DEBUG_OPENGL("Skybox")
             activeShader = ResourceManager::GetShader("Skybox Shader");
             activeShader->Apply(camera);
 

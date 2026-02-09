@@ -18,9 +18,10 @@ namespace EisEngine{
 
     enum UniformSamplerIndices{
         DIFFUSE = 0,
-        CUBEMAP = 1,
-        DEPTH_BACK_FACE = 2,
-        DEPTH_FRONT_FACE = 3
+        NORMAL = 1,
+        CUBEMAP = 2,
+        DEPTH_BACK_FACE = 3,
+        DEPTH_FRONT_FACE = 4
     };
 
     namespace rendering {
@@ -35,7 +36,7 @@ namespace EisEngine{
             /// \n Applies the shader to the rendering pipeline.
             void Apply(Camera* camera);
             /// \n Applies a texture to the rendering pipeline.
-            void ApplyTexture(const Texture2D& texture) const;
+            void ApplyTexture2D(const Texture2D& texture, UniformSamplerIndices type) const;
             /// \n Applies a cubemap texture to the rendering pipeline.
             void ApplyCubemap(const Cubemap& cubemap) const;
 

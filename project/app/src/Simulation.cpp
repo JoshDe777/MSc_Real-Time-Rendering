@@ -24,9 +24,9 @@ namespace RTR {
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader("Cook-Torrance");
+        RenderingSystem::SetActiveShader("Toon");
 
-        skybox = std::make_shared<Skybox>(*this);
+        //skybox = std::make_shared<Skybox>(*this);
 
         onUpdate.addListener([&](Game& game){
             DisplayUI();
@@ -60,13 +60,8 @@ namespace RTR {
             if (roughness == 0.0f)
                 roughness = 0.001f;
             teapot->setRoughness(roughness);
-            teapot->setOpacity(opacity);
+            //teapot->setOpacity(opacity);
         }
-        /*for(const auto& light: lights){
-            light->SetColor(emission);
-            light->SetIntensity(intensity);
-            light->SetRotationSpeed(spd);
-        }*/
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetAmbientLevel(amb);
         RenderingSystem::SetEta(emission);

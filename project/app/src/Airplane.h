@@ -11,7 +11,7 @@ namespace RTR {
     class Airplane {
     public:
         explicit Airplane(Game& game);
-        Entity* getPlane() {return public_plane.get();}
+        Entity* getPlane() {return plane.get();}
 
         // anims
         void Animate();
@@ -27,11 +27,10 @@ namespace RTR {
     private:
         // init
         shared_ptr<Entity> plane = nullptr;
-        shared_ptr<Entity> public_plane = nullptr;
         bool displayAxes = false;
         const std::string assetPath = "3d-objects/j22.fbx";
         Vector3 posOffset = Vector3::zero;
-        const Vector3 rotationOffsets = Vector3(0,90,0);
+        const Vector3 rotationOffsets = Vector3(0,-90,0);
         // std::array<std::shared_ptr<Entity>, 3> axisRings;
 
         // anim stuff:
@@ -50,5 +49,8 @@ namespace RTR {
         std::pair<int, int> activeKeyframes;
         Vector3 currentDir = Vector3::zero;
         float distBetweenKeyframes = 0;
+
+        Quaternion startRotation = Vector3::zero;
+        Quaternion targetRotation = Vector3::zero;
     };
 }

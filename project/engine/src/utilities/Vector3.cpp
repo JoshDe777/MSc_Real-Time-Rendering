@@ -101,31 +101,15 @@ namespace EisEngine{
     const Vector3 Vector3::up = Vector3(0, 1, 0);
 
     Vector3 Vector3::Rotate(const EisEngine::Vector3 &rotationAngles) const {
-        float yaw = Math::DegreesToRadians(rotationAngles.y);
-        float pitch = Math::DegreesToRadians(rotationAngles.x);
-        float roll = Math::DegreesToRadians(rotationAngles.z);
+        // map to quaternion-based rotation.
+        return Rotate(Quaternion::FromEulerXYZ(rotationAngles));
+    }
 
-        // rotations in order: roll (z), pitch (x), yaw (y)
-        float rollCos = Math::Cos(roll);
-        float rollSin = Math::Sin(roll);
-        float x1 = x * rollCos - y * rollSin;
-        float y1 = x * rollSin + y * rollCos;
-        float z1 = z;
+    Vector3 Vector3::Rotate(const EisEngine::Quaternion &q) const {
+        auto vQuat = Quaternion(x, y, z, 0);
+        auto invQ = q.conjugated();
 
-        float pitchCos = Math::Cos(pitch);
-        float pitchSin = Math::Sin(pitch);
-        float x2 = x1;
-        float y2 = y1 * pitchCos - z1 * pitchSin;
-        float z2 = y1 * pitchSin + z1 * pitchCos;
-
-        float yawCos = Math::Cos(yaw);
-        float yawSin = Math::Sin(yaw);
-        float x3 = x2 * yawCos + z2 * yawSin;
-        float y3 = y2;
-        float z3 = -x2 * yawSin + z2 * yawCos;
-
-        return Vector3(Math::RadiansToDegrees(x3),
-                       Math::RadiansToDegrees(y3),
-                       Math::RadiansToDegrees(z3));
+        auto result = q * vQuat * invQ;
+        return (Vector3) result;
     }
 }

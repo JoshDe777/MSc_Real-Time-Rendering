@@ -71,5 +71,7 @@ namespace EisEngine {
 
         /// \n Calculates the square root of the given value.
         static float Sqrt(const float& val);
+
+        static float Lerp(const float& start, const float& end, const float& t);
     };
 }

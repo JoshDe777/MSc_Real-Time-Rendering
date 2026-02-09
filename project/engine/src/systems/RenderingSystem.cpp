@@ -469,7 +469,7 @@ struct Entry{
                     renderer->ApplyData(*activeShader);
                 auto model = mesh.entity()->transform->GetModelMatrix();
                 activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                mesh.draw();
+                mesh.draw(activeShader->GetShaderID());
             });
         }
         #pragma endregion

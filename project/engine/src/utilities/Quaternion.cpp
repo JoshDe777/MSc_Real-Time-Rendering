@@ -8,18 +8,18 @@ namespace EisEngine {
     Quaternion::Quaternion(const EisEngine::Vector3 &axis, const float &r): x(axis.x), y(axis.y), z(axis.z), r(r) {}
 
     Quaternion Quaternion::FromEulerXYZ(const EisEngine::Vector3 &deg) {
-        float sx = sin(deg.x/2);
-        float sy = sin(deg.y/2);
-        float sz = sin(deg.z/2);
-        float cx = cos(deg.x/2);
-        float cy = cos(deg.y/2);
-        float cz = cos(deg.z/2);
+        float sinx = sin(deg.x / 2);
+        float siny = sin(deg.y / 2);
+        float sinz = sin(deg.z / 2);
+        float cosx = cos(deg.x / 2);
+        float cosy = cos(deg.y / 2);
+        float cosz = cos(deg.z / 2);
 
         return Quaternion(
-                sx*cy*cz - cx*sy*sz,
-                cx*sy*cz + sx*cy*sz,
-                cx*cy*sz - sx*sy*cz,
-                cx*cy*cz + sx*sy*sz
+                sinx * cosy * cosz - cosx * siny * sinz,
+                cosx * siny * cosz + sinx * cosy * sinz,
+                cosx * cosy * sinz - sinx * siny * cosz,
+                cosx * cosy * cosz + sinx * siny * sinz
         ).normalized();
     }
 

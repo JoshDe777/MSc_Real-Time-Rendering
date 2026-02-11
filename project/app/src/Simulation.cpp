@@ -45,8 +45,9 @@ namespace RTR {
             rotationVals = Vector3(90, rotationVals.y, rotationVals.z);
         }
 
-        if(readonly || inAnim)
+        if(readonly || inAnim) {
             ImGui::EndDisabled();
+        }
         else{
             auto transform = airplane->getPlane()->transform;
             transform->SetLocalPosition(posVals);
@@ -56,10 +57,10 @@ namespace RTR {
 
         if(ImGui::Button(readonly ? "Unlock UI Editing" : "Lock UI Editing")){
             readonly = !readonly;
-            if(!readonly){
+            if(!inAnim){
                 auto transform = airplane->getPlane()->transform;
                 posVals = transform->GetLocalPosition();
-                rotationVals = transform->GetLocalRotation();;
+                rotationVals = transform->GetLocalRotation();
             }
         }
 
@@ -71,6 +72,11 @@ namespace RTR {
         if(ImGui::Button(airplane->IsPaused() ? "Resume animation" : "Pause animation")){
             airplane->TogglePlay();
             inAnim = !airplane->IsPaused();
+            if(!inAnim){
+                auto transform = airplane->getPlane()->transform;
+                posVals = transform->GetLocalPosition();
+                rotationVals = transform->GetLocalRotation();
+            }
         }
         if(ImGui::Button("Reset anim"))
             airplane->ResetAnim();

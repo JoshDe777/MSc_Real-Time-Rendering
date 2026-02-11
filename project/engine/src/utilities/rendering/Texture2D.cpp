@@ -11,6 +11,7 @@ namespace EisEngine {
         Width = width;
         Height = height;
         glBindTexture(GL_TEXTURE_2D, textureID);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexImage2D(GL_TEXTURE_2D, 0, (GLint) internalFormat, (GLint) width,
                      (GLint) height,0,imageFormat,GL_UNSIGNED_BYTE,data);
 

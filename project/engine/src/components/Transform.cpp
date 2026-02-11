@@ -137,7 +137,6 @@ namespace EisEngine::components{
     }
 
     void Transform::SetGlobalRotation(const Vector3& newRotation) {
-        Vector3 angularDiff;
         if (m_parent) {
             glm::mat4 parentGlobalRotationMatrix = glm::eulerAngleYXZ(
                     glm::radians(m_parent->GetGlobalRotation().y),
@@ -152,15 +151,24 @@ namespace EisEngine::components{
             );
             glm::mat4 localRotationMatrix = inverseParentRotationMatrix * globalRotationMatrix;
             auto newEulerRotation = NormalizeAngles(ConvertMatrixToEuler(localRotationMatrix));
-            angularDiff = CalculateAngularRotation(localRotation, newEulerRotation);
             localRotation = newRotation;
         } else {
-            angularDiff = CalculateAngularRotation(localRotation, NormalizeAngles(newRotation));
             localRotation = NormalizeAngles(newRotation);
         }
         m_rotationChanged = true;
         MarkDirty();
     }
+
+    void Transform::SetGlobalEulerRotation(const EisEngine::Vector3 &rotation) {
+        if(m_parent){
+            localRotation = NormalizeAngles(rotation - m_parent->GetGlobalRotation());
+        }
+        else
+            SetLocalEulerRotation(rotation);
+        m_rotationChanged = true;
+        MarkDirty();
+    }
+
     void Transform::SetGlobalScale(const Vector3& scale) {
         auto oldScale = GetGlobalScale();
         if (m_parent) {
@@ -184,6 +192,12 @@ namespace EisEngine::components{
     void Transform::SetLocalRotation(const Vector3& rotation) {
         auto newRotation = NormalizeAngles(rotation);
         localRotation = newRotation;
+        m_rotationChanged = true;
+        MarkDirty();
+    }
+
+    void Transform::SetLocalEulerRotation(const EisEngine::Vector3 &rotation) {
+        localRotation = NormalizeAngles(rotation);
         m_rotationChanged = true;
         MarkDirty();
     }

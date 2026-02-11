@@ -33,7 +33,8 @@ namespace EisEngine::components {
         Component::Invalidate();
     }
 
-    void Line::draw() const {
+    void Line::draw(const unsigned int& shaderProgram) const {
+        auto vpos = glGetAttribLocation(shaderProgram, "aPos");
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
         glEnableVertexAttribArray(0);

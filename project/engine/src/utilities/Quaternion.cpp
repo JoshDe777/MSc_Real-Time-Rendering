@@ -8,19 +8,19 @@ namespace EisEngine {
     Quaternion::Quaternion(const EisEngine::Vector3 &axis, const float &r): x(axis.x), y(axis.y), z(axis.z), r(r) {}
 
     Quaternion Quaternion::FromEulerXYZ(const EisEngine::Vector3 &deg) {
-        float sx = sin(Math::DegreesToRadians(deg.x)/2);
-        float sy = sin(Math::DegreesToRadians(deg.y)/2);
-        float sz = sin(Math::DegreesToRadians(deg.z)/2);
-        float cx = cos(Math::DegreesToRadians(deg.x)/2);
-        float cy = cos(Math::DegreesToRadians(deg.y)/2);
-        float cz = cos(Math::DegreesToRadians(deg.z)/2);
+        float sx = sin(deg.x/2);
+        float sy = sin(deg.y/2);
+        float sz = sin(deg.z/2);
+        float cx = cos(deg.x/2);
+        float cy = cos(deg.y/2);
+        float cz = cos(deg.z/2);
 
         return Quaternion(
                 sx*cy*cz - cx*sy*sz,
                 cx*sy*cz + sx*cy*sz,
                 cx*cy*sz - sx*sy*cz,
                 cx*cy*cz + sx*sy*sz
-        );
+        ).normalized();
     }
 
     const Quaternion Identity = Quaternion(0, 0, 0, 1);
@@ -55,6 +55,8 @@ namespace EisEngine {
                 r - q.r
                 );
     }
+
+    Quaternion Quaternion::operator-() const { return Quaternion(-x, -y, -z, -r);}
     Quaternion Quaternion::operator*(const EisEngine::Quaternion &q) const {
         return Quaternion(
                 r * q.x + x * q.r + y * q.z - z * q.y,
@@ -81,9 +83,12 @@ namespace EisEngine {
     }
 
     Vector3 Quaternion::operator*(const Vector3& v) const {
+        // negate z values because y and z axes flip for some reason.
+        auto vTemp = Vector3(v.x, v.y, -v.z);
         auto q = Vector3(x, y, z);
-        auto t = Vector3::CrossProduct(q, v) * 2;
-        return v + r*t + Vector3::CrossProduct(q, t);
+        auto t = Vector3::CrossProduct(q, vTemp) * 2;
+        auto mRes = vTemp + r*t + Vector3::CrossProduct(q, t);
+        return Vector3(mRes.x, mRes.y, mRes.z);
     }
 
     Quaternion &Quaternion::operator+=(const Quaternion &q) {
@@ -120,5 +125,76 @@ namespace EisEngine {
                 deg.normalized() * Math::Sin(angle / 2, DEGREES),
                 Math::Cos(angle / 2, DEGREES)
             );
+    }
+
+    // math derived from David Parker
+    // "Converting quaternions to Euler angles - Programming TIL #197 3D Math 41 tutorial video screencast"
+    // on Youtube, link: https://youtu.be/vxPVw_EgyJI?si=EsirZdPvnlu927FE
+    Vector3 Quaternion::ToEulerXYZ() const {
+        auto pitch = Math::Arcsin(-2 * (y*z + r*x), DEGREES);
+        auto cosP = Math::Cos(pitch, DEGREES);
+        // gimbal lock bypassing
+        // case no GL
+        float yaw;
+        float roll;
+        if(cosP != 0){
+            yaw = Math::Arctan(2*x*z - 2*r*y, 1.0f-2*pow(x, 2)-2*pow(y,2), DEGREES);
+            roll = Math::Arctan(x*y-r*z, 0.5f-pow(x,2)-pow(z,2));
+        }
+        else{
+            yaw = Math::Arctan(-x*z-r*y, 0.5f-pow(y,2)-pow(z,2), DEGREES);
+            roll = 0.0f;
+        }
+        return Vector3(pitch, yaw, roll);
+    }
+
+    float Quaternion::Dot(const EisEngine::Quaternion &q1, const EisEngine::Quaternion &q2) {
+        return q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.r * q2.r;
+    }
+
+    Quaternion Quaternion::Lerp(const EisEngine::Quaternion &q1, const EisEngine::Quaternion &q2, const float &val) {
+        // avoid interpolating angles > 180
+        auto tempQ2 = Dot(q1, q2) < 0.0f ? q2 : -q2;
+
+        return Quaternion(
+            Math::Lerp(q1.x, tempQ2.x, val),
+            Math::Lerp(q1.y, tempQ2.y, val),
+            Math::Lerp(q1.z, tempQ2.z, val),
+            Math::Lerp(q1.r, tempQ2.r, val)
+        );
+    }
+
+    Quaternion Quaternion::GetRotationToTarget(const EisEngine::Vector3 &origin, const EisEngine::Vector3 &target) {
+        auto o = origin.normalized();
+        auto t = target.normalized();
+
+        // no rotation needed if exact match.
+        if(o == t)
+            return Quaternion(0, 0, 0, 1);
+
+        float cosAngle = Vector3::DotProduct(o, t);
+
+        // catch edge case of diametrically opposed vectors (cross product = (0,0,0))
+        if(cosAngle == -1){
+            auto planeAxis = Vector3::CrossProduct(Vector3::up, o);
+            // edge-case-ception: if the original vector is also Vector3::up
+            if(pow(planeAxis.magnitude(), 2) < b2_epsilon)
+                planeAxis = Vector3::CrossProduct(Vector3::right, o);
+
+            return Quaternion::FromAxisAngle(planeAxis.normalized(), 180);
+        }
+
+        auto planeAxis = Vector3::CrossProduct(o, t);
+        // half-angle identity calculation -> ( cos(a/2) = sqrt((1+cos(a))/2) )
+        // *2 because quat x quat is angle/2 x angle/2
+        auto hAI = Math::Sqrt((1.0f + cosAngle) * 2.0f);
+        float hAIinv = 1.0f / hAI;
+
+        return Quaternion(
+            planeAxis.x * hAIinv,
+            planeAxis.y * hAIinv,
+            planeAxis.z * hAIinv,
+            hAI / 2
+        ).normalized();
     }
 }

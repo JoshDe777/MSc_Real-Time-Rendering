@@ -138,6 +138,10 @@ namespace EisEngine {
 
     ecs::Entity* ResourceManager::Load3DObject(Game& game, const fs::path &path) {
         auto fullPath = resolveAssetPath(path);
+        // return null val if object not found
+        if(fullPath == fs::path("Invalid"))
+            return nullptr;
+
         std::string pathString = fullPath.string();
         // import the asset with a few optimizations for efficiency:
         // meshes triangulated & optimized, normals generated if not exist, and tangents calculated for normals.
@@ -172,6 +176,7 @@ namespace EisEngine {
     Material* ResourceManager::LoadMaterial(const aiMaterial* mat){
         auto matName = std::string(mat->GetName().C_Str());
         if(Materials[matName] == nullptr){
+            DEBUG_INFO("Creating Material '" + matName + "'")
             Materials[matName] = make_unique<Material>(matName);
             auto result = Materials[matName].get();
 
@@ -207,8 +212,8 @@ namespace EisEngine {
                 mat->Get("$mat.metallicFactor", 0, 0, metallic);
             result->SetMetallic(metallic);
         }
-        /*else
-            DEBUG_WARN("Attempting to overwrite existing material " + matName + ".")*/
+        else
+            DEBUG_WARN("Attempting to overwrite existing material " + matName + ".")
         return Materials[matName].get();
     }
 
@@ -248,18 +253,16 @@ namespace EisEngine {
         // get texture from material. Only embedded textures supported because yeah.
         aiString path;
         mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+
         // check for embedded texture & error out if not.
-        if (path.C_Str()[0] == '*')
-            tex = scene->GetEmbeddedTexture(path.C_Str());
-        else if (path.length == 0)
+        if (path.length == 0){
+            DEBUG_WARN("No embedded texture found for material " + std::string(mat->GetName().C_Str()) + ".")
             return GetTexture("default");
-        else {
-            DEBUG_INFO(path.C_Str())
-            auto texPath = fs::path(modelPath.string() + "\\" + path.C_Str());
-            DEBUG_LOG(texPath.string())
-            return GetTexture("default"); // GenerateTextureFromFile(texPath, path.C_Str());
         }
+
+        tex = scene->GetEmbeddedTexture(path.C_Str());
         auto textureName = std::string(tex->mFilename.C_Str());
+        DEBUG_INFO("Importing texture at " + modelPath.string() + ", named '" + textureName + "'.")
 
         // make sure no duplicate textures.
         if(Textures[textureName] == nullptr){
@@ -276,10 +279,8 @@ namespace EisEngine {
 
             auto texture = Texture2D();
 
-            if(nrChannels == 4) {
-                texture.internalFormat = GL_RGBA;
-                texture.imageFormat = GL_RGBA;
-            }
+            texture.internalFormat = GL_RGBA;
+            texture.imageFormat = GL_RGBA;
 
             texture.Generate(width, height, data);
             stbi_image_free(data);
@@ -293,9 +294,12 @@ namespace EisEngine {
     }
 
     Texture2D* ResourceManager::GenerateTextureFromFile( const fs::path &imagePath, const std::string &textureName) {
-        if (Textures[textureName] == nullptr)
-            Textures[textureName] = std::make_unique<Texture2D>(
-                    loadTextureFromFile(resolveAssetPath(imagePath)));
+        if (Textures[textureName] == nullptr){
+            fs::path filepath = resolveAssetPath(imagePath);
+            if(filepath != fs::path("Invalid"))
+                Textures[textureName] = std::make_unique<Texture2D>(
+                        loadTextureFromFile(filepath));
+        }
         return GetTexture(textureName);
     }
 
@@ -314,7 +318,15 @@ namespace EisEngine {
             return texture;
         }
 
-        if(nrChannels == 4) {
+        if(nrChannels == 1){
+            texture.internalFormat = GL_RED;
+            texture.imageFormat = GL_RED;
+        }
+        else if(nrChannels == 3) {
+            texture.internalFormat = GL_RGB;
+            texture.imageFormat = GL_RGB;
+        }
+        else if(nrChannels == 4) {
             texture.internalFormat = GL_RGBA;
             texture.imageFormat = GL_RGBA;
         }
@@ -414,6 +426,9 @@ namespace EisEngine {
         unsigned int i = 0;
         for(auto& path: filePaths){
             auto filePath = resolveAssetPath(path);
+            if(filePath == fs::path("Invalid"))
+                continue;
+
             stbi_set_flip_vertically_on_load(0);
 
             std::string pathString = filePath.string();

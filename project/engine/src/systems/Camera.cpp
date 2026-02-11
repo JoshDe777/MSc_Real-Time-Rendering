@@ -80,6 +80,9 @@ namespace EisEngine::systems {
     }
 
     glm::mat4 Camera::GetProjectionMatrix() const {
+        if(aspectRatio == -1)
+            return glm::identity<glm::mat4>();
+
         switch(mode){
             case PERSPECTIVE:
                 return glm::perspective(Math::DegreesToRadians(fov), aspectRatio, nearClip, farClip);

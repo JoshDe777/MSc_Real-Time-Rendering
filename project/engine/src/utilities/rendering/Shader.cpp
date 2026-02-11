@@ -5,17 +5,24 @@
 #include "engine/systems/Camera.h"
 
 namespace EisEngine::rendering {
-    Shader::Shader(const unsigned int &vertexShaderProgram, const unsigned int &fragmentShaderProgram) :
+    Shader::Shader(
+            const unsigned int &vertexShaderProgram,
+            const unsigned int &fragmentShaderProgram,
+            const std::string& name
+        ) :
     vertexShader(vertexShaderProgram),
-    fragmentShader(fragmentShaderProgram) {
+    fragmentShader(fragmentShaderProgram),
+    name(name){
         shaderProgram = glCreateProgram();
+
         glAttachShader(shaderProgram, vertexShader);
         glAttachShader(shaderProgram, fragmentShader);
+
         glLinkProgram(shaderProgram);
 
         glValidateProgram(shaderProgram);
 
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
 
         GLint status;
         glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &status);
@@ -23,7 +30,7 @@ namespace EisEngine::rendering {
         {
             char log[1024];
             glGetProgramInfoLog(shaderProgram, 1024, nullptr, log);
-            std::cerr << log << std::endl;
+            std::cerr << name << " - " << log << std::endl;
         }
 
         glDetachShader(shaderProgram, vertexShader);
@@ -43,23 +50,23 @@ namespace EisEngine::rendering {
 
     void Shader::Apply(Camera* camera) {
         glUseProgram(shaderProgram);
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
         vpMatrix = camera->GetVPMatrix();
         auto mvpLoc = glGetUniformLocation(shaderProgram, "mvp");
         if(mvpLoc != -1)
             setMatrix("mvp", vpMatrix);
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
         auto camPosLoc = glGetUniformLocation(shaderProgram, "camPos");
         if(camPosLoc != -1)
             setVector("camPos", camera->transform->GetGlobalPosition());
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
 
         setInt("image", UniformSamplerIndices::DIFFUSE);
         setInt("nMap", UniformSamplerIndices::NORMAL);
         setInt("cubeMap", UniformSamplerIndices::CUBEMAP);
         setInt("backDepthMap", UniformSamplerIndices::DEPTH_BACK_FACE);
         setInt("frontDepthMap", UniformSamplerIndices::DEPTH_FRONT_FACE);
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
     }
 
     void Shader::ApplyTexture2D(const Texture2D& texture, UniformSamplerIndices type) const {
@@ -70,7 +77,7 @@ namespace EisEngine::rendering {
     void Shader::ApplyCubemap(const Cubemap& cubemap) const {
         glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
         cubemap.Bind();
-        DEBUG_OPENGL("Shader no." + std::to_string(shaderProgram))
+        DEBUG_OPENGL("Shader " + name)
     }
 
     void Shader::setMatrix(const std::string &uniformName, glm::mat4 mat4) const {

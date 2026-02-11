@@ -14,6 +14,7 @@ namespace EisEngine {
         /// \n *deprecated* Contains rendering data for any type of mesh.
         /// \n Use specialized renderers tailored to a specific mesh type instead.
         class Renderer : public Component {
+            friend class ecs::Entity;
         public:
             /// \n Creates a renderer.
             /// @param diffTex - Texture2D*: A pointer to a texture item. Can be null.

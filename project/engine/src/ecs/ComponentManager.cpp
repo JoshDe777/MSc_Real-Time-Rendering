@@ -5,5 +5,5 @@
 
 namespace EisEngine::ecs{
     ComponentManager::ComponentManager(Game &engine) : engine(engine)
-    { engine.onAfterUpdate.addListener([&](Game &) { purgeComponents();});}
+    { }
 }

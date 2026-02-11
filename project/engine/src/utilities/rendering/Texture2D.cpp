@@ -25,7 +25,6 @@ namespace EisEngine {
     }
 
     void Texture2D::Bind() const {
-        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DIFFUSE);
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
 }

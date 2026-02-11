@@ -1,5 +1,7 @@
 #include "engine/utilities/rendering/PrimitiveMesh3D.h"
 #include "engine/utilities/Vector2.h"
+#include "engine/utilities/Math.h"
+#include "engine/utilities/Debug.h"
 
 namespace EisEngine::rendering {
     // converts a std::vector of Vector3's to a std::vector of glm::vec3's.
@@ -44,43 +46,98 @@ namespace EisEngine::rendering {
         return result;
     }
 
-    std::vector<glm::vec3> InitTans(const std::vector<Vector3>* tans, const int& vCount){
-        std::vector<glm::vec3> result = {};
-        // if object has no tangents, default to (1, 0, 0)
-        if(!tans)
-            for(auto i = 0; i < vCount; i++)
-                result.emplace_back(1, 0, 0);
-        else
-            result = Vector3ToGlmVector(*tans);
-
-        return result;
+    PrimitiveMesh3D::PrimitiveMesh3D(
+            const std::vector<Vector3> &shapeVertices,
+            const std::vector<unsigned int> &shapeIndices,
+            const std::vector<Vector3>* shapeNormals,
+            const std::vector<Vector2>* shapeUVs,
+            const std::vector<Vector3>* shapeTangents,
+            const std::vector<Vector3>* shapeBitangents) :
+            vertices(Vector3ToGlmVector(shapeVertices)),
+            normals(InitNormals(shapeNormals, (int) shapeVertices.size())),
+            uvs(InitUVs(shapeUVs, (int) shapeVertices.size())),
+            nVerts(shapeVertices.size()),
+            PrimitiveMesh(shapeVertices, shapeIndices) {
+        CalculateTangentVecs();
+        /*DEBUG_LOG("Init Primitive Mesh with " + std::to_string(nVerts) + " vertices, " +
+            std::to_string(indices.size()) + " indices, " +
+            std::to_string(normals.size()) + " normals, " +
+            std::to_string(uvs.size()) + " UVs, " +
+            std::to_string(tangents.size()) + " tangents, and " +
+            std::to_string(bitangents.size()) + " bitangents."
+        )*/
     }
 
-    std::vector<glm::vec3> InitBitans(const std::vector<Vector3>* bitans, const int& vCount){
-        std::vector<glm::vec3> result = {};
-        // if object has no tangents, default to (0, 0, 1)
-        if(!bitans)
-            for(auto i = 0; i < vCount; i++)
-                result.emplace_back(0, 0, 1);
-        else
-            result = Vector3ToGlmVector(*bitans);
+    void PrimitiveMesh3D::CalculateTangentVecs() {
+        std::vector<glm::vec3> tans = {nVerts, glm::vec3(0.0f)};
+        std::vector<glm::vec3> bitans = {nVerts, glm::vec3(0.0f)};
 
-        return result;
+        for(auto i = 0; i < indices.size(); i += 3){
+            // prevent array index errors
+            assert(i+2 < indices.size());
+            // prevent reference errors looking for vertices that don't exist.
+            assert(indices[i] < nVerts && indices[i+1] < nVerts && indices[i+2] < nVerts);
+
+            glm::vec3 v0 = vertices[indices[i]];
+            glm::vec3 v1 = vertices[indices[i+1]];
+            glm::vec3 v2 = vertices[indices[i+2]];
+
+            glm::vec2 uv0 = uvs[indices[i]];
+            glm::vec2 uv1 = uvs[indices[i+1]];
+            glm::vec2 uv2 = uvs[indices[i+2]];
+
+            // determine local edges - vertex & uv (object space)
+            auto e1 = v1 - v0;
+            auto e2 = v2 - v0;
+
+            auto uve1 = uv1 - uv0;
+            auto uve2 = uv2 - uv0;
+
+            // calculate det of UV matrix [uv1, uv2]
+            auto det = uve1.x * uve2.y - uve1.y * uve2.x;
+            // no valid operation here (matrix not invertible if det = 0)
+            if(fabs(det) < 1e-6f) {
+                /*DEBUG_INFO(
+                    "Aborting tangent calculation for face:\n" +
+                    (std::string) Vector3(v0) + ", " + (std::string) Vector2(uv0) + ",\n" +
+                    (std::string) Vector3(v1) + ", " + (std::string) Vector2(uv1) + ",\n" +
+                    (std::string) Vector3(v2) +  (std::string) Vector2(uv2) + ",\n" +
+                    "(invalid determinant det=" + std::to_string(det) + ")"
+                )*/
+                continue;
+            }
+
+            auto detm1 = 1.0f / det;
+            auto tan = detm1 * (uve2.y * e1 - uve1.y * e2);
+
+            tans[indices[i]] += tan;
+            tans[indices[i+1]] += tan;
+            tans[indices[i+2]] += tan;
+        }
+
+        for(auto i = 0; i < nVerts; i++){
+            auto& tan = tans[i];
+            auto normal = normals[i];
+            // no use normalizing empty vectors
+            if(glm::length(tan) == 0){
+                /*DEBUG_INFO("Aborting tangent calculation for vertex with normal " +
+                    (std::string) Vector3(normal) + " (invalid tan.)")*/
+               continue;
+            }
+
+            // Gram-Schmidt normalization for orthonormality to normal vector.
+            tan = glm::normalize(tan - normal * glm::dot(normal, tan));
+            // calculate bitangent as normal x tan
+            bitans[i] = glm::cross(normal, tan);
+
+            /*DEBUG_INFO("Created model space tangent vectors as:\n N=" + (std::string) Vector3(normal) +
+            ",\n T=" + (std::string) Vector3(tan) +
+            ",\n B=" + (std::string) Vector3(bitans[i]))*/
+        }
+
+        tangents = tans;
+        bitangents = bitans;
     }
-
-    PrimitiveMesh3D::PrimitiveMesh3D(const std::vector<Vector3> &shapeVertices,
-                                     const std::vector<unsigned int> &shapeIndices,
-                                     const std::vector<Vector3>* shapeNormals,
-                                     const std::vector<Vector2>* shapeUVs,
-                                     const std::vector<Vector3>* shapeTangents,
-                                     const std::vector<Vector3>* shapeBitangents) :
-                                     vertices(Vector3ToGlmVector(shapeVertices)),
-                                     normals(InitNormals(shapeNormals, (int) shapeVertices.size())),
-                                     uvs(InitUVs(shapeUVs, (int) shapeVertices.size())),
-                                     tangents(InitTans(shapeTangents, (int) shapeVertices.size())),
-                                     bitangents(InitBitans(shapeBitangents, (int) shapeVertices.size())),
-                                     nVerts(shapeVertices.size()),
-                                     PrimitiveMesh(shapeVertices, shapeIndices) {}
 
     std::vector<Vector3> PrimitiveMesh3D::GetVertices() const {
         std::vector<Vector3> result = {};
@@ -121,125 +178,6 @@ namespace EisEngine::rendering {
             result.emplace_back(i);
         return result;
     }
-
-#pragma region Cube Definition
-    const std::vector<Vector3> cubeVertices = {
-            // front
-            Vector3(-0.5f, -0.5f, 0.5f),        //0
-            Vector3(-0.5f, 0.5f, 0.5f),         //1
-            Vector3(0.5f, 0.5f, 0.5f),          //2
-            Vector3(0.5f, -0.5f, 0.5f),         //3
-            // left
-            Vector3(-0.5f, 0.5f, 0.5f),         //4
-            Vector3(-0.5f, -0.5f, 0.5f),        //5
-            Vector3(-0.5f, -0.5f, -0.5f),        //6
-            Vector3(-0.5f, 0.5f, -0.5f),        //7
-            // bottom
-            Vector3(-0.5f, -0.5f, 0.5f),        //8
-            Vector3(0.5f, -0.5f, 0.5f),         //9
-            Vector3(0.5f, -0.5f, -0.5f),        //10
-            Vector3(-0.5f, -0.5f, -0.5f),       //11
-            // right
-            Vector3(0.5f, -0.5f, 0.5f),         //12
-            Vector3(0.5f, 0.5f, 0.5f),          //13
-            Vector3(0.5f, 0.5f, -0.5f),         //14
-            Vector3(0.5f, -0.5f, -0.5f),        //15
-            // back
-            Vector3(-0.5f, -0.5f, -0.5f),       //16
-            Vector3(0.5f, -0.5f, -0.5f),        //17
-            Vector3(0.5f, 0.5f, -0.5f),         //18
-            Vector3(-0.5f, 0.5f, -0.5f),        //19
-            // top
-            Vector3(-0.5f, 0.5f, -0.5f),        //20
-            Vector3(0.5f, 0.5f, -0.5f),         //21
-            Vector3(0.5f, 0.5f, 0.5f),          //22
-            Vector3(-0.5f, 0.5f, 0.5f),         //23
-    };
-
-    const std::vector<unsigned int> cubeIndices = {
-            2, 1, 0,
-            3, 2, 0,
-            14, 13, 12,
-            14, 12, 15,
-            19, 18, 17,
-            19, 17, 16,
-            7, 6, 4,
-            4, 6, 5,
-            8, 9, 11,
-            9, 11, 10,
-            23, 22, 20,
-            22, 21, 20
-    };
-
-    const Vector3 forward = Vector3(0, 0, 1);
-    const Vector3 right = Vector3(1, 0, 0);
-    const Vector3 up = Vector3(0, 1, 0);
-
-    const std::vector<Vector3> cubeNormals = {
-            forward,
-            forward,
-            forward,
-            forward,
-            -right,
-            -right,
-            -right,
-            -right,
-            -up,
-            -up,
-            -up,
-            -up,
-            right,
-            right,
-            right,
-            right,
-            -forward,
-            -forward,
-            -forward,
-            -forward,
-            up,
-            up,
-            up,
-            up
-    };
-
-    const std::vector<Vector2> cubeUVs = {
-            // face 1
-            Vector2(0, 0),
-            Vector2(0, 1),
-            Vector2(1, 1),
-            Vector2(1, 0),
-            // face 2
-            Vector2(1, 1),
-            Vector2(1, 0),
-            Vector2(0, 0),
-            Vector2(0, 1),
-            // face 3
-            Vector2(1, 0),
-            Vector2(0, 0),
-            Vector2(0, 1),
-            Vector2(1, 1),
-            // face 4
-            Vector2(0, 0),
-            Vector2(0, 1),
-            Vector2(1, 1),
-            Vector2(1, 0),
-            // face 5
-            Vector2(1, 0),
-            Vector2(0, 0),
-            Vector2(0, 1),
-            Vector2(1, 1),
-            // face 6
-            Vector2(0, 1),
-            Vector2(1, 1),
-            Vector2(1, 0),
-            Vector2(0, 0),
-    };
-#pragma endregion
-
-    const PrimitiveMesh3D PrimitiveMesh3D::cube = PrimitiveMesh3D(
-            cubeVertices, cubeIndices,
-            &cubeNormals, &cubeUVs
-            );
 
 #pragma region skybox definition
     const std::vector<Vector3> skyboxVertices = {

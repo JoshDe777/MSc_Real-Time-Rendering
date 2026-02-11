@@ -70,14 +70,14 @@ namespace EisEngine {
             /// @param entityID - the unique ID of the entity whose component is to be removed.
             template<typename C>
             void removeComponent(guid_t entityID){
-                auto componentContainer = containers[typeid(C).hash_code()];
+                auto& componentContainer = containers[typeid(C).hash_code()];
                 const auto &component = componentContainer.find(entityID);
                 const auto componentExistsInContainer = component != componentContainer.end();
 
                 if(componentExistsInContainer) {
                     component->second->deleted = true;
                     component->second->Invalidate();
-                    deleteList.emplace_back( typeid(C).hash_code(), entityID);
+                    componentContainer.erase(entityID);
                 }
             }
 
@@ -99,9 +99,10 @@ namespace EisEngine {
                 for(auto &[componentTypeID, componentContainer]: containers) {
                     const auto &component = componentContainer.find(entityID);
                     const auto componentExistsInContainer = component != componentContainer.end();
-                    if(componentExistsInContainer)
+                    if(componentExistsInContainer) {
                         component->second->deleted = true;
-                    deleteList.emplace_back(componentTypeID, entityID);
+                        componentContainer.erase(entityID);
+                    }
                 }
             }
 
@@ -109,20 +110,11 @@ namespace EisEngine {
             template<typename C>
             bool hasComponentOfType() { return containers.count(typeid(C).hash_code()) != 0;}
         private:
-            /// \n Deletes all components that were previously marked for deletion.
-            void purgeComponents(){
-                for(const auto &[componentTypeID, ownerID]: deleteList)
-                    containers.at(componentTypeID).erase(ownerID);
-                deleteList.clear();
-            }
-
             using ComponentContainer = std::map<guid_t, std::unique_ptr<Component>>;
 
             /// \n A dictionary of component containers.
             /// \n Maps a container for a type X of component to its hashed typeid
             std::map<size_t, ComponentContainer> containers;
-            /// \n A list of components to be deleted ASAP.
-            std::vector<std::pair<size_t, guid_t>> deleteList;
             /// \n A reference to the engine instance to pass on to components.
             Game &engine;
         };

@@ -29,7 +29,11 @@ namespace EisEngine{
         class Shader {
         public:
             /// \n Creates a shader from the given shader programs.
-            explicit Shader(const unsigned int& vertexShaderProgram, const unsigned int& fragmentShaderProgram);
+            explicit Shader(
+                    const unsigned int& vertexShaderProgram,
+                    const unsigned int& fragmentShaderProgram,
+                    const std::string& name
+                );
             Shader(const Shader& other) = delete;
             Shader(Shader&& other) noexcept;
 
@@ -81,6 +85,8 @@ namespace EisEngine{
             /// \n gets the shader program ID.
             unsigned int GetShaderID() const {return shaderProgram;}
         private:
+            /// \n The shader program's given name.
+            const std::string name;
             /// \n The OpenGL shader program.
             unsigned int shaderProgram = 0;
             /// \n This component's vertex shader.

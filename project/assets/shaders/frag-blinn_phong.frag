@@ -40,7 +40,7 @@ uniform int LOD;
 out vec4 fragColor;
 
 vec3 getNormalInWorldSpace(){
-    vec3 mapNormal = texture(nMap, TexCoords).xyz;
+    vec3 mapNormal = texture(nMap, TexCoords * tiling).xyz;
     mapNormal = normalize(2 * (mapNormal - vec3(0.5)));
 
     vec3 normal = normalize(fragNormal);

@@ -33,7 +33,7 @@ uniform float specular;
 uniform int screenWidth;
 uniform int screenHeight;
 
-// Samplers
+// Samplers (broken)
 uniform sampler2D image;
 uniform sampler2D nMap;
 uniform samplerCube cubeMap;

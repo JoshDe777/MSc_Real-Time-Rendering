@@ -1,6 +1,6 @@
 #include "Simulation.h"
 
-int n_teapots = 3;
+int n_teapots = 1;
 
 namespace RTR {
     inline Vector3 estimatePosition(const int& index){
@@ -12,7 +12,7 @@ namespace RTR {
             return Vector3(7, 1, 1);
     }
 
-    Simulation::Simulation(const std::string& renderer) : Game("RTR Simulation") {
+    Simulation::Simulation() : Game("RTR Simulation") {
         // init lights & teapots here
         camera.transform->SetGlobalPosition(worldOffset);
         for(int i = 0; i < n_teapots; i++){
@@ -24,7 +24,7 @@ namespace RTR {
             lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader("Toon");
+        RenderingSystem::SetActiveShader("Blinn-Phong");
 
         //skybox = std::make_shared<Skybox>(*this);
 
@@ -43,27 +43,37 @@ namespace RTR {
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Separator();
         ImGui::SeparatorText("Shininess Parameters");
-        ImGui::SliderFloat("Fresnel Factor (F0)", &spec, 0.0f, 3.0f);
-        ImGui::SliderFloat("Absorption Factor", &amb, 0.0f, max_absorption);
+        ImGui::SliderFloat("Specular Factor", &spec, 0.0f, 3.0f);
+        ImGui::SliderFloat("Ambient factor", &amb, 0.0f, max_absorption);
         ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
         ImGui::Separator();
-        ImGui::ColorEdit3("Refraction indices (eta)", &emission.x);
+        ImGui::ColorEdit3("Light Emission Color", &emission.x);
+        ImGui::Separator();
+        ImGui::SeparatorText("Cube Transform Data");
+        ImGui::SliderFloat3("Cube Position", &cubePos.x, -10.0f, 10.0f);
+        ImGui::SliderFloat3("Cube Rotation", &cubeRot.x, -360.0f, 360.0f);
+        if(ImGui::Button("Reset Cube Transform")){
+            cubePos = Vector3::zero;
+            cubeRot = Vector3::zero;
+        }
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     void Simulation::UpdateWorld() {
-        // blinn-phong: roughness should be inverted
-        // cook-torrance: specular highlights too strong; add some attenuation
         for(const auto& teapot: pots){
+            teapot->entity->transform->SetLocalPosition(cubePos);
+            teapot->entity->transform->SetLocalRotation(cubeRot);
             if (roughness == 0.0f)
                 roughness = 0.001f;
             teapot->setRoughness(roughness);
             //teapot->setOpacity(opacity);
         }
+        for(const auto& light: lights)
+            light->SetColor(emission);
+
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetAmbientLevel(amb);
-        RenderingSystem::SetEta(emission);
     }
 }

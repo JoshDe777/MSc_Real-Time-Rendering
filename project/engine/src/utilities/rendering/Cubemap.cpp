@@ -51,7 +51,6 @@ namespace EisEngine {
     }
 
     void Cubemap::Bind() const {
-        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
         glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
     }
 }

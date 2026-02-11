@@ -46,12 +46,18 @@ namespace EisEngine::ecs {
         /// @param C - the type of component to be removed.
         /// @param component - a reference to the exact component to be removed.
         template<typename C>
-        void RemoveComponent(Component &component);
+        void RemoveComponent(C* component){
+            component->Invalidate();
+            componentManager.removeComponent<C>(m_id);
+        }
 
         /// \n Removes any component from this entity.
         /// @param C - the type of component to be removed.
         template<typename C>
-        void RemoveComponent();
+        void RemoveComponent(){
+            C* component = GetComponent<C>();
+            RemoveComponent<C>(component);
+        }
 
         /// \n a pointer to the transform assigned to an entity.
         Transform* transform = nullptr;

@@ -10,16 +10,4 @@ namespace EisEngine::ecs{
             DEBUG_WARN("<Entity::Entity> Invalid Entity ID")
         transform = &AddComponent<Transform>();
     }
-
-    template<typename C>
-    void Entity::RemoveComponent(Component &component) {
-        component.Invalidate();
-        componentManager.removeComponent<C>(m_id);
-    }
-
-    template<typename C>
-    void Entity::RemoveComponent() {
-        auto &component = GetComponent<C>();
-        RemoveComponent<C>(component);
-    }
 }

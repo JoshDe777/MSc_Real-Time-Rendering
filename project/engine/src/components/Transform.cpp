@@ -256,4 +256,29 @@ namespace EisEngine::components{
         for(auto child:children)
             child->MarkDirty();
     }
+
+    void Transform::PrintRelativeSceneGraph(bool root) {
+        if(root)
+            DEBUG_LOG("Printing Parent-Child graph relative to entity '" + entity()->name() + "'.")
+
+        if(children.empty())
+            return;
+
+        std::string comma = ", ";
+        auto i = 0;
+        std::string names;
+        for(auto child: children){
+            names += child->entity()->name();
+            if(i+1 < children.size())
+                names += comma;
+            i++;
+        }
+
+        DEBUG_LOG("Children of entity " + entity()->name() + ": " + names)
+        for(auto child: children)
+            child->PrintRelativeSceneGraph(false);
+
+        if(root)
+            DEBUG_LOG("End Scene Graph Print")
+    }
 }

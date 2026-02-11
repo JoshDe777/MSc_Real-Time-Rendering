@@ -17,9 +17,9 @@ std::string RenderingSystem::active3DShader = "Blinn-Phong";
 const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
         {"Blinn-Phong", "Blinn-Phong Shader"},
         {"Cook-Torrance", "Cook-Torrance Shader"},
-        {"Toon", "Toon Shader"},
+        {"Toon", "Toon Shader"}/*,
         {"Depth", "Depth Mapping"},
-        {"Glassy", "Glassy Shader"}
+        {"Glassy", "Glassy Shader"}*/
 };
 Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
 shared_ptr<Entity> RenderingSystem::skybox = nullptr;
@@ -219,14 +219,14 @@ struct Entry{
                                                  "Toon Shader");
 
         // generate Depth Mapping shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-geometry_debug.vert",
+        /*ResourceManager::GenerateShaderFromFiles("shaders/vert-geometry_debug.vert",
                                                  "shaders/frag-depth_mapping.frag",
                                                  "Depth Mapping");
 
         // generate Glassy shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-glassy.frag",
-                                                 "Glassy Shader");
+                                                 "Glassy Shader");*/
 
         ResourceManager::GenerateShaderFromFiles("shaders/vert-skybox.vert",
                                                  "shaders/frag-skybox.frag",

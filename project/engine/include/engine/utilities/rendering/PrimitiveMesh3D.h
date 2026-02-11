@@ -15,8 +15,6 @@ namespace EisEngine {
                                  const std::vector<Vector2>* shapeUVs = nullptr,
                                  const std::vector<Vector3>* shapeTangents = nullptr,
                                  const std::vector<Vector3>* shapeBitangents = nullptr);
-        /// \n A standard 1x1x1 cube.
-        static const PrimitiveMesh3D cube;
         /// \n A skybox cube primitive.
         static const PrimitiveMesh3D skybox;
 
@@ -33,10 +31,14 @@ namespace EisEngine {
         const std::vector<glm::vec3> vertices;
         const std::vector<glm::vec3> normals;
         const std::vector<glm::vec2> uvs;
-        const std::vector<glm::vec3> tangents;
-        const std::vector<glm::vec3> bitangents;
+        /// \n NEVER MODIFY. Only const because I can't init
+        /// separately from bitangents.
+        std::vector<glm::vec3> tangents;
+        /// \n NEVER MODIFY. Only const because I can't init
+        /// separately from tangents.
+        std::vector<glm::vec3> bitangents;
         const unsigned int nVerts;
+        void CalculateTangentVecs();
     };
-
     } // rendering
 } // EisEngine

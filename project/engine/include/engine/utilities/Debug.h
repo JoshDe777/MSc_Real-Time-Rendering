@@ -12,7 +12,7 @@
 namespace EisEngine {
     using namespace std;
 
-    enum LogPriority{ InfoP, DebugP, WarnP, ErrorP, FatalP};
+    enum LogPriority{ InfoP = 0, DebugP = 1, WarnP = 2, ErrorP = 3, FatalP = 4};
 
     /**
      * @def DEBUG_INFO(message)
@@ -194,10 +194,10 @@ namespace EisEngine {
         /// \n Maps every log priority to a string.
         static std::string PriorityToString(LogPriority p){
             switch (p) {
-                case DebugP:
-                    return "Debug";
                 case InfoP:
                     return "Info";
+                case DebugP:
+                    return "Debug";
                 case WarnP:
                     return "Warning";
                 case ErrorP:

@@ -96,6 +96,8 @@ namespace EisEngine{
             [[nodiscard]] Vector3 Up() const { return Vector3::up.Rotate(localRotation).normalized();}
             /// \n Calculates the forwards direction of an object, assuming it started facing negative Z.
             [[nodiscard]] Vector3 Forward() const { return Vector3::forward.Rotate(localRotation).normalized();}
+
+            void PrintRelativeSceneGraph(bool root = true);
         private:
             /// \n Adds a child Transform.
             void AddChild(Transform *transform);

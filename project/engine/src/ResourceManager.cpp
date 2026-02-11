@@ -451,7 +451,8 @@ namespace EisEngine {
         if(Shaders[shaderName] == nullptr)
             Shaders[shaderName] = std::make_unique<Shader>(
                     loadAndCompileShader(GL_VERTEX_SHADER, vertexShaderPath),
-                    loadAndCompileShader(GL_FRAGMENT_SHADER, fragmentShaderPath)
+                    loadAndCompileShader(GL_FRAGMENT_SHADER, fragmentShaderPath),
+                    shaderName
             );
         return GetShader(shaderName);
     }

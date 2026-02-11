@@ -4,10 +4,9 @@
 
 using Simulation = RTR::Simulation;
 
-std::string renderer = "blinn-phong";
-
 int main(){
     std::cout << "Hello World!" << std::endl;
-    auto sim = Simulation(renderer);
+    Debug::SetPriority(DebugP);
+    auto sim = Simulation();
     sim.run();
 }

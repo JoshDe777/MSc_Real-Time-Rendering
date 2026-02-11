@@ -13,7 +13,7 @@ namespace RTR {
         shared_ptr<Renderer> renderer;
         void rotate();
         float rotationSpeed = 3.0f;
-        const std::string diffuseTexPath = "textures/metal_plate_02_diff_2k.png";
+        const std::string diffuseTexPath = "textures/metal_plate_02_diff_2k.jpg";
         const std::string normalTexPath = "textures/metal_plate_02_nor_gl_2k.png";
     };
 }

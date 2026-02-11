@@ -16,33 +16,43 @@ namespace RTR {
     }
 
     Teapot::Teapot(Game& game) {
+        auto temp = ResourceManager::Load3DObject(game, fs::path("3d-objects/cube.fbx"));
+        temp->transform->SetLocalPosition(Vector3(0, 0, -2));
+        //temp->transform->PrintRelativeSceneGraph();
 
-        auto tempEntity = ResourceManager::Load3DObject(game,"3d-objects/utah_teapot.obj");
-
-        for(auto child : tempEntity->transform->getChildren()){
-            auto temp = child->entity();
-            auto tempRenderer = temp->GetComponent<Renderer>();
-            if(tempRenderer)
-                entity = static_cast<shared_ptr<Entity>>(temp);
-            else
-                for(auto grandchild : child->getChildren()){
-                    temp = grandchild->entity();
-                    tempRenderer = temp->GetComponent<Renderer>();
-                    if(!tempRenderer)
-                        DEBUG_RUNTIME_ERROR("No Renderers found on object.")
-                    else
-                        entity = static_cast<shared_ptr<Entity>>(temp);
+        if(temp->GetComponent<Mesh3D>() == nullptr && !temp->transform->getChildren().empty()){
+            for(auto child: temp->transform->getChildren()){
+                if(child->entity()->GetComponent<Mesh3D>() != nullptr){
+                    temp = child->entity();
+                    goto meshEntity;
                 }
+                for(auto grandchild: child->getChildren()){
+                    if(grandchild->entity()->GetComponent<Mesh3D>() != nullptr){
+                        temp = grandchild->entity();
+                        goto meshEntity;
+                    }
+                }
+            }
+            DEBUG_RUNTIME_ERROR("Couldn't find an entity in the scene graph with a mesh.")
         }
 
-        entity->transform->parent()->SetLocalRotation(GetRandomOrbitAxis());
+    meshEntity:
+        entity = static_cast<shared_ptr<Entity>>(temp);
+        if(entity->GetComponent<Renderer>() != nullptr)
+            entity->RemoveComponent<Renderer>();
+
+        auto diffTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Metal_Plate_Diffuse");
+        auto normTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Metal_Plate_Normal");
+
+        renderer = static_cast<shared_ptr<Renderer>>(&entity->AddComponent<Renderer>(
+                diffTex,
+                nullptr,
+                "none",
+                normTex));
+
+        temp->transform->SetLocalRotation(GetRandomOrbitAxis());
         entity->transform->SetLocalPosition(Vector3::zero);
 
-        auto temp = entity->GetComponent<Renderer>();
-        if(!temp)
-            DEBUG_RUNTIME_ERROR("Couldn't find Renderer on Teapot!")
-
-        renderer = static_cast<const shared_ptr<Renderer>>(temp);
         renderer->material->SetDiffuse(Color::white);
         renderer->material->SetMetallic(1.0f);
         renderer->material->SetRoughness(0.7f);
@@ -64,6 +74,6 @@ namespace RTR {
     }
 
     void Teapot::rotate() {
-        entity->transform->Rotate(Vector3(0, 0, rotationSpeed * Time::deltaTime));
+        //entity->transform->Rotate(Vector3(0, 0, rotationSpeed * Time::deltaTime));
     }
 }

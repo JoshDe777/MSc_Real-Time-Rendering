@@ -12,16 +12,13 @@ namespace RTR {
         explicit Light(Game& game, Transform* reference, const float& orbitDist);
         void SetColor(const Vector3& em);
         void SetIntensity(const float& i);
-        void SetRotationSpeed(const float& v) {orbitStepPerSec = v;}
+        void SetOrbitVals(const Vector3& EulerXYZ);
+        void SetOrbitDist(const float& dist) { orbitDist = dist;}
     private:
         shared_ptr<Transform> lightTransform;
         shared_ptr<PointLight> component;
         unique_ptr<Material> mat;
-        void Orbit();
-        float orbitStepPerSec = 10.0f;
-        float currentOrbit = 0.0f;
         const Vector3 orbitAxis;
-        Quaternion orbitFrame = Quaternion(0, 0, 0, 0);
         float orbitDist;
         float intensity = 10.0f;
         Vector3 orbitCentre = Vector3::zero;

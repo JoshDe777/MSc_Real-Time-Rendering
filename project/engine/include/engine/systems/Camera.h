@@ -25,7 +25,7 @@ namespace EisEngine::systems {
         /// \n Projection matrix being the directions in which the camera is pointing,
         /// \n View matrix being the camera's position in world space.
         /// @return projection x view, a 4x4 matrix representing the camera's FOV from its position
-        glm::mat4 GetVPMatrix();
+        glm::mat4 GetVPMatrix() const;
 
         /// \n Zooms into the scene, restraining the FOV.
         /// @param value: the zoom factor applied to the camera.\n
@@ -88,6 +88,6 @@ namespace EisEngine::systems {
         CameraMode mode = PERSPECTIVE;
 
         /// \n updates the aspect ratio to width/height.
-        void UpdateAspectRatio() { aspectRatio = (float) m_screenWidth / (float) m_screenHeight; }
+        void UpdateAspectRatio() { aspectRatio = m_screenHeight != 0 ? (float) m_screenWidth / (float) m_screenHeight : 0; }
     };
 }

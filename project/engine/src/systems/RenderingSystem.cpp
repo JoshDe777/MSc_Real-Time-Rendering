@@ -507,28 +507,31 @@ struct Entry{
 
         std::vector<Mesh3D*> transparentMeshes = {};
 
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
             engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){
                 // don't render skybox object.
                 if(skybox != nullptr && *mesh.entity() == *skybox)
                     return;
 
-                auto renderer = mesh.entity()->GetComponent<Renderer>();
+                /*auto renderer = mesh.entity()->GetComponent<Renderer>();
                 // early exit if transparent mesh (separate shaders).
                 if(renderer && renderer->material->GetOpacity() != 1.0f){
                     transparentMeshes.emplace_back(&mesh);
                     return;
-                }
+                }*/
 
-                // no fbos
                 PrepareDraw(mesh, activeShader);
                 mesh.draw(activeShader->GetShaderID());
             });
         }
 
-        if(!transparentMeshes.empty()){
+        /*if(!transparentMeshes.empty()){
             DrawTransparentObjects(transparentMeshes, activeShader);
-        }
+        }*/
         #pragma endregion
 
         #pragma region Sprite Rendering

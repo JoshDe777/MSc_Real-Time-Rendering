@@ -20,11 +20,11 @@ namespace RTR {
             auto pos = estimatePosition(i);
             pots[i]->entity->transform->SetGlobalPosition(pos);
             RenderingSystem::MarkAsLoader(pots[i]->entity.get());
-            lights.push_back(make_shared<Light>(*this, pots[i]->entity->transform, 2.0f));
-            lights[i]->lightTransform->SetParent(pots[i]->entity->transform);
         }
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetActiveShader("Blinn-Phong");
+
+        light = std::make_shared<Light>(*this, pots[0]->entity->transform, 3.0f);
 
         //skybox = std::make_shared<Skybox>(*this);
 
@@ -42,16 +42,23 @@ namespace RTR {
         // ImGui UI Window
         ImGui::Begin("Rendering Params", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Separator();
-        ImGui::SeparatorText("Shininess Parameters");
+        ImGui::SeparatorText("World Parameters");
         ImGui::SliderFloat("Specular Factor", &spec, 0.0f, 3.0f);
-        ImGui::SliderFloat("Ambient factor", &amb, 0.0f, max_absorption);
-        ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
-        ImGui::Separator();
-        ImGui::ColorEdit3("Light Emission Color", &emission.x);
+        ImGui::SliderFloat("Ambient factor", &amb, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SeparatorText("Cube Transform Data");
         ImGui::SliderFloat3("Cube Position", &cubePos.x, -10.0f, 10.0f);
-        ImGui::SliderFloat3("Cube Rotation", &cubeRot.x, -360.0f, 360.0f);
+        ImGui::SliderFloat3("Cube Rotation", &cubeRot.x, -1.0f, 1.0f);
+        ImGui::Separator();
+        ImGui::SeparatorText("Light Properties");
+        ImGui::SliderFloat3("Light Orbit Position", &orbit.x, 0.0f, 1.0f);
+        ImGui::SliderFloat("Light Orbit Distance", &orbitDist, 0.5f, 3.0f);
+        ImGui::ColorEdit3("Light Emission Color", &emission.x);
+        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 2.0f);
+        ImGui::Separator();
+        ImGui::SeparatorText("Cube Material Properties");
+        ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
         if(ImGui::Button("Reset Cube Transform")){
             cubePos = Vector3::zero;
             cubeRot = Vector3::zero;
@@ -64,14 +71,19 @@ namespace RTR {
     void Simulation::UpdateWorld() {
         for(const auto& teapot: pots){
             teapot->entity->transform->SetLocalPosition(cubePos);
-            teapot->entity->transform->SetLocalRotation(cubeRot);
+            teapot->entity->transform->SetLocalRotation(cubeRot * 360);
             if (roughness == 0.0f)
                 roughness = 0.001f;
             teapot->setRoughness(roughness);
-            //teapot->setOpacity(opacity);
+            teapot->setOpacity(opacity);
         }
-        for(const auto& light: lights)
+
+        if(light != nullptr){
             light->SetColor(emission);
+            light->SetIntensity(intensity);
+            light->SetOrbitVals(orbit * 360);
+            light->SetOrbitDist(orbitDist);
+        }
 
         RenderingSystem::SetSpecularFactor(spec);
         RenderingSystem::SetAmbientLevel(amb);

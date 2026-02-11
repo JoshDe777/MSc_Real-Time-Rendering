@@ -84,9 +84,10 @@ namespace EisEngine{
             void Invalidate() const;
             /// \n gets the shader program ID.
             unsigned int GetShaderID() const {return shaderProgram;}
-        private:
+
             /// \n The shader program's given name.
             const std::string name;
+        private:
             /// \n The OpenGL shader program.
             unsigned int shaderProgram = 0;
             /// \n This component's vertex shader.

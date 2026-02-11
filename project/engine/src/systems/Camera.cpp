@@ -62,7 +62,7 @@ namespace EisEngine::systems {
         transform->SetLocalRotation(res);
     }
 
-    glm::mat4 Camera::GetVPMatrix() {
+    glm::mat4 Camera::GetVPMatrix() const {
         auto view = CalculateViewMatrix();
         auto projection = GetProjectionMatrix();
         return projection * view;

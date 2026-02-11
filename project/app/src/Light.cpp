@@ -19,7 +19,6 @@ namespace RTR {
 
     Light::Light(Game& game, Transform* reference, const float& orbitDist) : orbitDist(orbitDist), orbitAxis(GetRandomOrbitAxis())
     {
-        orbitFrame = Quaternion::FromAxisAngle(orbitAxis, 0.0f);
         // create child entity with point light features...
         auto lightEntity = game.entityManager.createEntity("light");
         lightTransform = static_cast<const shared_ptr<Transform>>(lightEntity.transform);
@@ -31,22 +30,7 @@ namespace RTR {
 
         // ... & offset in y direction by orbitDist.
         orbitCentre = reference->GetGlobalPosition();
-        lightTransform->SetLocalPosition( orbitCentre + orbitDist * Vector3::up);
-
-        // orbit every frame.
-        game.onUpdate.addListener([&](Game& game){
-            Orbit();
-        });
-    }
-
-    void Light::Orbit() {
-        currentOrbit = Math::Mod(currentOrbit + orbitStepPerSec * Time::deltaTime, 360.0f);
-
-        auto orbitRotation = Quaternion::FromAxisAngle(orbitAxis, currentOrbit);
-        auto totalRotation = (orbitFrame * orbitRotation).normalized();
-        auto baseOffset = Vector3::up * orbitDist;
-
-        lightTransform->SetGlobalPosition(orbitCentre + totalRotation * baseOffset);
+        lightTransform->SetLocalPosition( orbitCentre + orbitDist * Vector3::forward);
     }
 
     void Light::SetColor(const Vector3 &em) {
@@ -55,5 +39,12 @@ namespace RTR {
 
     void Light::SetIntensity(const float &i) {
         component->SetIntensity(i);
+    }
+
+    void Light::SetOrbitVals(const Vector3& EulerXYZ){
+        Quaternion orbit = Quaternion::FromEulerXYZ(EulerXYZ);
+        auto dir = orbit * (-Vector3::forward);
+
+        lightTransform->SetLocalPosition(orbitCentre + dir * orbitDist);
     }
 }

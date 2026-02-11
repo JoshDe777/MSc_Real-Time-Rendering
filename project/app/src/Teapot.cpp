@@ -17,7 +17,7 @@ namespace RTR {
 
     Teapot::Teapot(Game& game) {
         auto temp = ResourceManager::Load3DObject(game, fs::path("3d-objects/cube.fbx"));
-        temp->transform->SetLocalPosition(Vector3(0, 0, -2));
+        temp->transform->SetLocalPosition(Vector3(0, 0, 0));
         //temp->transform->PrintRelativeSceneGraph();
 
         if(temp->GetComponent<Mesh3D>() == nullptr && !temp->transform->getChildren().empty()){
@@ -41,8 +41,8 @@ namespace RTR {
         if(entity->GetComponent<Renderer>() != nullptr)
             entity->RemoveComponent<Renderer>();
 
-        auto diffTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Metal_Plate_Diffuse");
-        auto normTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Metal_Plate_Normal");
+        auto diffTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Brick_Wall_Diffuse");
+        auto normTex = ResourceManager::GenerateTextureFromFile(normalTexPath, "Brick_Wall_Normal");
 
         renderer = static_cast<shared_ptr<Renderer>>(&entity->AddComponent<Renderer>(
                 diffTex,
@@ -56,7 +56,7 @@ namespace RTR {
         renderer->material->SetDiffuse(Color::white);
         renderer->material->SetMetallic(1.0f);
         renderer->material->SetRoughness(0.7f);
-        //renderer->material->SetOpacity(0.1f);
+        renderer->material->SetOpacity(1.0f);
 
         game.onUpdate.addListener([&](Game& game){
             rotate();

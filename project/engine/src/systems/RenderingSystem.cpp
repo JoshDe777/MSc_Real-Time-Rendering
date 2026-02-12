@@ -15,7 +15,8 @@ int RenderingSystem::n_toon_levels = 8;
 const std::string RenderingSystem::defaultShader = "Blinn-Phong";
 std::string RenderingSystem::active3DShader = "Blinn-Phong";
 const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
-        {"Blinn-Phong", "Blinn-Phong Shader"},
+        {"Normal Blinn-Phong", "nMap Blinn-Phong Shader"},
+        {"Default Blinn-Phong", "Default Blinn-Phong Shader"},
         {"Cook-Torrance", "Cook-Torrance Shader"},
         {"Toon", "Toon Shader"}/*,
         {"Depth", "Depth Mapping"},
@@ -168,7 +169,7 @@ struct Entry{
     }
 
     RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
-        SetActiveShader("Blinn-Phong");
+        SetActiveShader("Default Blinn-Phong");
 
         camera = &engine.camera;
         if(!camera)
@@ -205,10 +206,14 @@ struct Entry{
         ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
                                                  "shaders/frag-sprite_unlit.frag",
                                                  "UI Shader");
-        // generate Blinn-Phong shader
+        // generate regular Blinn-Phong shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-blinn_phong.frag",
-                                                 "Blinn-Phong Shader");
+                                                 "Default Blinn-Phong Shader");
+        // generate normal mapped Blinn-Phong shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-nMap_blinn_phong.frag",
+                                                 "nMap Blinn-Phong Shader");
         // generate Cook-Torrance shader
         ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
                                                  "shaders/frag-cook_torrance.frag",
@@ -506,10 +511,6 @@ struct Entry{
         activeShader->setFloat("specular", specularFactor);
 
         std::vector<Mesh3D*> transparentMeshes = {};
-
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
 
         if(engine.componentManager.hasComponentOfType<Mesh3D>()){
             engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){

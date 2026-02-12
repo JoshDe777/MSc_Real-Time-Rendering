@@ -41,26 +41,32 @@ namespace RTR {
         if(entity->GetComponent<Renderer>() != nullptr)
             entity->RemoveComponent<Renderer>();
 
-        auto diffTex = ResourceManager::GenerateTextureFromFile(diffuseTexPath, "Brick_Wall_Diffuse");
-        auto normTex = ResourceManager::GenerateTextureFromFile(normalTexPath, "Brick_Wall_Normal");
+        textures.emplace_back(
+            ResourceManager::GenerateTextureFromFile(texPaths[0].first, "Brick_Wall_Diffuse"),
+            ResourceManager::GenerateTextureFromFile(texPaths[0].second, "Brick_Wall_Normal")
+        );
+        textures.emplace_back(
+            ResourceManager::GenerateTextureFromFile(texPaths[1].first, "Metal_Plate_Diffuse"),
+            ResourceManager::GenerateTextureFromFile(texPaths[1].second, "Metal_Plate_Normal")
+        );
+        textures.emplace_back(
+                ResourceManager::GenerateTextureFromFile(texPaths[2].first, "Asphalt_Diffuse"),
+                ResourceManager::GenerateTextureFromFile(texPaths[2].second, "Asphalt_Normal")
+        );
 
         renderer = static_cast<shared_ptr<Renderer>>(&entity->AddComponent<Renderer>(
-                diffTex,
+                textures[texIndex].first.get(),
                 nullptr,
                 "none",
-                normTex));
+                textures[texIndex].second.get()));
 
         temp->transform->SetLocalRotation(GetRandomOrbitAxis());
         entity->transform->SetLocalPosition(Vector3::zero);
 
         renderer->material->SetDiffuse(Color::white);
         renderer->material->SetMetallic(1.0f);
-        renderer->material->SetRoughness(0.7f);
+        renderer->material->SetRoughness(1.0f);
         renderer->material->SetOpacity(1.0f);
-
-        game.onUpdate.addListener([&](Game& game){
-            rotate();
-        });
     }
 
     void Teapot::setRoughness(const float &val) {
@@ -73,7 +79,10 @@ namespace RTR {
         renderer->material->SetOpacity(endval);
     }
 
-    void Teapot::rotate() {
-        //entity->transform->Rotate(Vector3(0, 0, rotationSpeed * Time::deltaTime));
+    void Teapot::updateTextures() {
+        texIndex = (texIndex + 1) % (int) texPaths.size();
+        DEBUG_LOG("Updated texIndex to new val " + std::to_string(texIndex))
+        renderer->SetDiffuseTexture(textures[texIndex].first.get());
+        renderer->SetNormalMap(textures[texIndex].second.get());
     }
 }

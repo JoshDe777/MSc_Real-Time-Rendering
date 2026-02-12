@@ -22,7 +22,7 @@ namespace RTR {
             RenderingSystem::MarkAsLoader(pots[i]->entity.get());
         }
         RenderingSystem::SetSpecularFactor(spec);
-        RenderingSystem::SetActiveShader("Blinn-Phong");
+        RenderingSystem::SetActiveShader("Default Blinn-Phong");
 
         light = std::make_shared<Light>(*this, pots[0]->entity->transform, 3.0f);
 
@@ -49,6 +49,10 @@ namespace RTR {
         ImGui::SeparatorText("Cube Transform Data");
         ImGui::SliderFloat3("Cube Position", &cubePos.x, -10.0f, 10.0f);
         ImGui::SliderFloat3("Cube Rotation", &cubeRot.x, -1.0f, 1.0f);
+        if(ImGui::Button("Reset Cube Transform")){
+            cubePos = Vector3::zero;
+            cubeRot = Vector3::zero;
+        }
         ImGui::Separator();
         ImGui::SeparatorText("Light Properties");
         ImGui::SliderFloat3("Light Orbit Position", &orbit.x, 0.0f, 1.0f);
@@ -59,9 +63,17 @@ namespace RTR {
         ImGui::SeparatorText("Cube Material Properties");
         ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
         ImGui::SliderFloat("Opacity", &opacity, 0.0f, 1.0f);
-        if(ImGui::Button("Reset Cube Transform")){
-            cubePos = Vector3::zero;
-            cubeRot = Vector3::zero;
+        if(ImGui::Button("Cycle Cube Texture")){
+            for(const auto& teapot: pots)
+                teapot->updateTextures();
+        }
+        ImGui::Separator();
+        ImGui::SeparatorText("Shader Togglers");
+        if(ImGui::Button("Only Mesh Normals")){
+            RenderingSystem::SetActiveShader("Default Blinn-Phong");
+        }
+        if(ImGui::Button("Normal Mapping")){
+            RenderingSystem::SetActiveShader("Normal Blinn-Phong");
         }
         ImGui::End();
         ImGui::Render();

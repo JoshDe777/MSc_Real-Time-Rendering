@@ -461,7 +461,7 @@ namespace EisEngine {
             DEBUG_WARN("No shaders created in resource manager system.")
             return nullptr;
         }
-        return Shaders[name].get();
+        return Shaders[name] != nullptr ? Shaders[name].get() : Shaders["Default Blinn-Phong Shader"].get();
     }
 
     unsigned int ResourceManager::loadAndCompileShader(GLuint shaderType, const fs::path &filePath) {

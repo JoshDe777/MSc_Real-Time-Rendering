@@ -33,12 +33,26 @@ namespace EisEngine::components {
     // applies the selected color to the active shader.
     void Renderer::ApplyData(Shader& shader) {
         material->ApplyMatData(shader);
+        DEBUG_INFO(entity()->name() + " material applied.")
 
-        if(diffuseTexture != nullptr)
-            shader.ApplyTexture2D(*diffuseTexture, DIFFUSE);
+        if(diffuseTexture != nullptr){
+            auto diffPos = glGetUniformLocation(shader.GetShaderID(), "image");
+            DEBUG_INFO("diffPos index=" + std::to_string(diffPos))
+            if(diffPos != -1) {
+                shader.ApplyTexture2D(*diffuseTexture, DIFFUSE);
+                DEBUG_INFO(entity()->name() + " diffuse texture applied.")
+            }
+        }
 
-        if(normalMap != nullptr)
-            shader.ApplyTexture2D(*normalMap, NORMAL);
+
+        if(normalMap != nullptr) {
+            auto nPos = glGetUniformLocation(shader.GetShaderID(), "nMap");
+            DEBUG_INFO("nPos index=" + std::to_string(nPos))
+            if(nPos != -1) {
+                shader.ApplyTexture2D(*normalMap, NORMAL);
+                DEBUG_INFO(entity()->name() + " normal map applied.")
+            }
+        }
     }
 
     void Renderer::Invalidate() {

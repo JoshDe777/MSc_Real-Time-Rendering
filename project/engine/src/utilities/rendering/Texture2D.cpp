@@ -27,4 +27,14 @@ namespace EisEngine {
     void Texture2D::Bind() const {
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
+
+    void Texture2D::SetFilteringMode(FilterModes mode) {
+        minFilterMode = mode == NEAREST ? GL_NEAREST :
+                        mode == LINEAR ? GL_LINEAR :
+                        GL_LINEAR_MIPMAP_LINEAR;
+        maxFilterMode = mode == NEAREST ? GL_NEAREST : GL_LINEAR;
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint) minFilterMode);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLint) maxFilterMode);
+    }
 }

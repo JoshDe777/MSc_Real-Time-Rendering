@@ -347,6 +347,7 @@ struct Entry{
         }
 
         activeShader->setInt("n_levels", n_toon_levels);
+        DEBUG_LOG("Finished Preparing Draw.")
     }
 
     void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
@@ -556,10 +557,11 @@ struct Entry{
                     uiSprites.emplace_back(&mesh);
                     return;
                 }
+
                 renderer->ApplyData(*activeShader);
                 auto model = mesh.entity()->transform->GetModelMatrix();
                 activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                mesh.draw();
+                mesh.draw(activeShader->GetShaderID());
             });
         }
 
@@ -586,7 +588,7 @@ struct Entry{
                                          - (float) screenHeight / 2, (float) screenHeight / 2);
             auto modelProjection = projection * mesh->entity()->transform->GetModelMatrix();
             activeShader->setMatrix("mvp", modelProjection);
-            mesh->draw();
+            mesh->draw(activeShader->GetShaderID());
         }
         #pragma endregion
     }

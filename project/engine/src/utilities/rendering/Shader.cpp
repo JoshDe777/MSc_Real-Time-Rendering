@@ -70,8 +70,16 @@ namespace EisEngine::rendering {
     }
 
     void Shader::ApplyTexture2D(const Texture2D& texture, UniformSamplerIndices type) const {
+        GLint maxUnits = 0;
+        glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
+        if(type > maxUnits){
+            DEBUG_WARN("Attempting to bind texture to invalid ID!")
+            return;
+        }
+
         glActiveTexture(GL_TEXTURE0 + type);
         texture.Bind();
+        DEBUG_OPENGL("Shader " + name)
     }
 
     void Shader::ApplyCubemap(const Cubemap& cubemap) const {

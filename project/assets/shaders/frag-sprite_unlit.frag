@@ -3,11 +3,12 @@
 in vec2 TexCoords;
 
 uniform sampler2D image;
-uniform vec4 diffuse;
+uniform float tiling;
+uniform vec3 diffuse;
 
 out vec4 fragColor;
 
 void main()
 {
-    fragColor = diffuse * texture(image, TexCoords);
+    fragColor = vec4(diffuse.xyz, 1.0) * texture(image, TexCoords * tiling);
 }

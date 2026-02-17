@@ -22,7 +22,7 @@ namespace EisEngine {
             /// \n the primitive mesh shape.
             const PrimitiveSpriteMesh primitive;
             /// \n A function called once every frame to display the mesh on screen.
-            void draw();
+            void draw(const unsigned int& shader);
         private:
             /// \n Vertex Buffer Object. Stores vertex data.
             unsigned int VBO;

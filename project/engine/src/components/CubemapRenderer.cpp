@@ -19,7 +19,9 @@ namespace EisEngine::components {
         if(!texture)
             return;
 
-        shader.ApplyCubemap(*texture);
+        auto cmPos = glGetAttribLocation(shader.GetShaderID(), "cubeMap");
+        if(cmPos != -1)
+            shader.ApplyCubemap(*texture);
     }
 
     void CubemapRenderer::Invalidate() {

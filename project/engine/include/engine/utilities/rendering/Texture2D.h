@@ -3,6 +3,12 @@
 #include <OpenGL/OpenGlInclude.h>
 
 namespace EisEngine {
+    enum FilterModes{
+        NEAREST = 0,
+        LINEAR = 1,
+        MIPMAP = 2
+    };
+
     class ResourceManager;
     /// \n A 2-dimensional texture. Is attached to a Renderer component to apply.
     class Texture2D {
@@ -10,6 +16,8 @@ namespace EisEngine {
     public:
         /// \n Binds the texture as the current active GL_TEXTURE_2D.
         void Bind() const;
+        /// \n Toggles the use of mipmaps. Starts off as true.
+        void SetFilteringMode(FilterModes mode);
 
         /// \n Texture width in pixels.
         unsigned int Width;

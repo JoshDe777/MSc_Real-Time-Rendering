@@ -10,21 +10,17 @@ namespace RTR {
     public:
         explicit Simulation();
     private:
-        shared_ptr<Entity> light_source = nullptr;
-        std::vector<shared_ptr<Teapot>> pots = {};
-        shared_ptr<Light> light = nullptr;
-        Vector3 worldOffset = Vector3(0, 0, 0.5f);
-        float spec = 1.0f;
-        float amb = 0.3f;
-        float roughness = 1.0f;
-        Vector3 emission = Vector3::one;
-        Vector3 cubePos = Vector3::zero;
-        Vector3 cubeRot = Vector3::zero;
-        Vector3 orbit = Vector3::zero;
-        float orbitDist = 2.0f;
-        float intensity = 1.0f;
-        float spd = 1.0f;
-        float opacity = 1.0f;
+        shared_ptr<Teapot> teapot = nullptr;
+        Vector3 worldOffset = Vector3(0, 0, 5);
+        Vector3 uniformPos = Vector3::zero;
+        Vector3 uniformRot = Vector3::zero;
+        float uniformScale = 1.0f;
+        float tiling = 1.0f;
+        bool uniform = false;
+
+        const float maxDist = 40;
+        const float maxRotation = 1.0f;
+        const float maxScale = 30.0f;
 
         void DisplayUI();
         void UpdateWorld();

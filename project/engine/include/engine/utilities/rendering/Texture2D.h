@@ -6,7 +6,8 @@ namespace EisEngine {
     enum FilterModes{
         NEAREST = 0,
         LINEAR = 1,
-        MIPMAP = 2
+        MIPMAP_NEAREST = 2,
+        MIPMAP_LINEAR = 3
     };
 
     class ResourceManager;

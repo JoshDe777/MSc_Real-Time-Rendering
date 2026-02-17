@@ -12,7 +12,7 @@ namespace RTR {
         shared_ptr<Entity> entity;
     private:
         shared_ptr<Renderer> renderer;
-        const std::string texPath = "textures/tiles_0059_color_2k.jpg";
+        const std::string texPath = "textures/checkerboard.png";
         shared_ptr<Texture2D> texture = nullptr;
     };
 }

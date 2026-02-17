@@ -42,6 +42,11 @@ namespace RTR {
             uniformRot = Vector3::zero;
             uniformScale = 1.0f;
         }
+        if(ImGui::Button("Showcase Preset")){
+            uniformPos = Vector3(0, -1.5f, -12);
+            uniformRot = Vector3(-0.24f, 0, 0);
+            uniformScale = maxScale;
+        }
 
         ImGui::Separator();
         ImGui::SeparatorText("Material Properties");
@@ -55,8 +60,11 @@ namespace RTR {
         if(ImGui::Button("LINEAR filtering")){
             teapot->setFilterMode(1);
         }
-        if(ImGui::Button("MipMap filtering")){
+        if(ImGui::Button("MipMap Nearest filtering")){
             teapot->setFilterMode(2);
+        }
+        if(ImGui::Button("MipMap Linear filtering")){
+            teapot->setFilterMode(3);
         }
 
         ImGui::End();

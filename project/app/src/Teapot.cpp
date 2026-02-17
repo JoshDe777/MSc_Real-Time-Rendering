@@ -31,6 +31,6 @@ namespace RTR {
     }
 
     void Teapot::setFilterMode(const int &val) {
-        texture->SetFilteringMode(val <= 2 ? (FilterModes) val : MIPMAP);
+        texture->SetFilteringMode(val <= 3 ? (FilterModes) val : MIPMAP_LINEAR);
     }
 }

@@ -74,10 +74,10 @@ namespace EisEngine{
 
             /// \n Gets an entity's child entities in the scene graph.
             /// @return std::set&lt;Transform *>: \n a set of pointers to the child entities' Transform components.
-            std::set<Transform *> getChildren() { return children;}
+            std::set<shared_ptr<Transform>> getChildren() { return children;}
             /// \n Gets the transform's parent transform.
             /// @return Transform*: a pointer to the parent transform component.
-            Transform *parent() { return m_parent;}
+            Transform *parent() { return m_parent.get();}
             /// \n Sets a new parent transform.
             /// @param transform - Transform*: a pointer to the parent-to-be transform.
             void SetParent(Transform *transform);
@@ -120,9 +120,9 @@ namespace EisEngine{
             /// \n Indicates whether the transform's position was changed manually in the current frame.
             bool m_scaleChanged = false;
             /// \n pointer to the transform's parent transform.
-            Transform *m_parent = nullptr;
+            shared_ptr<Transform> m_parent = nullptr;
             /// \n a set of transform pointers assigned as the current transform's children.
-            std::set<Transform *> children;
+            std::set<shared_ptr<Transform>> children;
             /// \n flags whether the object was changed directly in the world.
             bool dirty = true;
 

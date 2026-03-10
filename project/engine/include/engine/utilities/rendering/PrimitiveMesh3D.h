@@ -17,6 +17,8 @@ namespace EisEngine {
                                  const std::vector<Vector3>* shapeBitangents = nullptr);
         /// \n A skybox cube primitive.
         static const PrimitiveMesh3D skybox;
+        /// \n A regular cube primitive.
+        static const PrimitiveMesh3D cube;
 
         // \n Access a few counts
         [[nodiscard]] unsigned int GetVertexCount() const { return nVerts;}

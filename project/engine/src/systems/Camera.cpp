@@ -25,7 +25,7 @@ namespace EisEngine::systems {
     nearClip(cameraMode == PERSPECTIVE ? 0.1f : -1),
     farClip(100)
     {
-        entity = &engine.entityManager.createEntity("Camera");
+        entity = static_cast<shared_ptr<Entity>>(&engine.entityManager->createEntity("Camera"));
         transform = entity->transform;
         engine.onUpdate.addListener([&] (Game &game){
             // save old known window dimensions.
@@ -33,7 +33,7 @@ namespace EisEngine::systems {
             int oldHeight = m_screenHeight;
 
             // get current window dimensions
-            auto dimensions = game.context.GetWindowSize();
+            auto dimensions = game.context->GetWindowSize();
             m_screenWidth = (int) dimensions.x;
             m_screenHeight = (int) dimensions.y;
 

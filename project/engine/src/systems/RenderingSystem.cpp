@@ -37,7 +37,7 @@ struct Entry{
     { return a->entity()->transform->GetGlobalPosition().z < b->entity()->transform->GetGlobalPosition().z;}
 
 // rendering system methods:
-    std::vector<Entity*> RenderingSystem::Loaders = {};
+    std::vector<shared_ptr<Entity>> RenderingSystem::Loaders = {};
 
     constexpr float CELL_SIZE = 40.0f;
 
@@ -49,7 +49,7 @@ struct Entry{
     }
 
     void RenderingSystem::MarkAsLoader(EisEngine::ecs::Entity *ptr) {
-        Loaders.push_back(ptr);
+        Loaders.push_back(static_cast<shared_ptr<Entity>>(ptr));
     }
 
     void RenderingSystem::SetSpecularFactor(const float &val) { specularFactor = val;}
@@ -171,7 +171,7 @@ struct Entry{
     RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
         SetActiveShader("Default Blinn-Phong");
 
-        camera = &engine.camera;
+        camera = static_cast<shared_ptr<Camera>>(engine.camera.get());
         if(!camera)
             DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
 
@@ -243,8 +243,8 @@ struct Entry{
     void RenderingSystem::BuildLightGrid() {
         LightGrid.clear();
 
-        if(engine.componentManager.hasComponentOfType<PointLight>()){
-            engine.componentManager.forEachComponent<PointLight>([&](PointLight& light){
+        if(engine.componentManager->hasComponentOfType<PointLight>()){
+            engine.componentManager->forEachComponent<PointLight>([&](PointLight& light){
                 auto pos = light.position();
                 Vector2 cell = WorldToCell(pos);
                 LightGrid[cell].push_back(light.GetOwner());
@@ -318,7 +318,7 @@ struct Entry{
 
             // for each entry in the results, create an Entry object
             for (int id : results) {
-                auto* e = engine.entityManager.getEntity(id);
+                auto* e = engine.entityManager->getEntity(id);
                 if (!e) continue;
 
                 auto* L = e->GetComponent<PointLight>();
@@ -352,7 +352,7 @@ struct Entry{
 
     void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
-        activeShader->Apply(camera);
+        activeShader->Apply(camera.get());
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
@@ -402,11 +402,11 @@ struct Entry{
         glCullFace(GL_BACK);
 
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
-        activeShader->Apply(camera);
+        activeShader->Apply(camera.get());
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
-        auto dims = engine.context.GetWindowSize();
+        auto dims = engine.context->GetWindowSize();
         activeShader->setInt("screenWidth", (int) dims.x);
         activeShader->setInt("screenHeight", (int) dims.y);
         activeShader->setVector("eta", eta);
@@ -452,9 +452,9 @@ struct Entry{
 
         // Mesh2D rendering
         glBindVertexArray(VAO[i++]);
-        if(engine.componentManager.hasComponentOfType<Mesh2D>()){
-            activeShader->Apply(camera);
-            engine.componentManager.forEachComponent<Mesh2D>([&](Mesh2D& mesh){
+        if(engine.componentManager->hasComponentOfType<Mesh2D>()){
+            activeShader->Apply(camera.get());
+            engine.componentManager->forEachComponent<Mesh2D>([&](Mesh2D& mesh){
                 auto model = mesh.entity()->transform->GetModelMatrix();
                 activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
@@ -466,8 +466,8 @@ struct Entry{
 
         // line rendering (same shader as Mesh2D's)
         glBindVertexArray(VAO[i++]);
-        if(engine.componentManager.hasComponentOfType<Line>()){
-            engine.componentManager.forEachComponent<Line>([&] (Line& mesh){
+        if(engine.componentManager->hasComponentOfType<Line>()){
+            engine.componentManager->forEachComponent<Line>([&] (Line& mesh){
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
                 if(renderer)
                     renderer->ApplyData(*activeShader);
@@ -485,7 +485,7 @@ struct Entry{
 
             DEBUG_OPENGL("Skybox")
             activeShader = ResourceManager::GetShader("Skybox Shader");
-            activeShader->Apply(camera);
+            activeShader->Apply(camera.get());
 
             glDepthMask(GL_FALSE);
             glDepthFunc(GL_LEQUAL);
@@ -507,14 +507,14 @@ struct Entry{
 
         // Mesh3D rendering
         activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
-        activeShader->Apply(camera);
+        activeShader->Apply(camera.get());
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
         std::vector<Mesh3D*> transparentMeshes = {};
 
-        if(engine.componentManager.hasComponentOfType<Mesh3D>()){
-            engine.componentManager.forEachComponent<Mesh3D>([&](Mesh3D& mesh){
+        if(engine.componentManager->hasComponentOfType<Mesh3D>()){
+            engine.componentManager->forEachComponent<Mesh3D>([&](Mesh3D& mesh){
                 // don't render skybox object.
                 if(skybox != nullptr && *mesh.entity() == *skybox)
                     return;
@@ -545,9 +545,9 @@ struct Entry{
         std::vector<SpriteMesh*> uiSprites = {};
 
         glBindVertexArray(VAO[i++]);
-        if(engine.componentManager.hasComponentOfType<SpriteMesh>()){
-            activeShader->Apply(camera);
-            engine.componentManager.forEachComponent<SpriteMesh>([&] (SpriteMesh& mesh){
+        if(engine.componentManager->hasComponentOfType<SpriteMesh>()){
+            activeShader->Apply(camera.get());
+            engine.componentManager->forEachComponent<SpriteMesh>([&] (SpriteMesh& mesh){
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
                 if(!renderer){
                     DEBUG_ERROR("No sprite renderer attached to mesh on entity " + mesh.entity()->name())
@@ -578,7 +578,7 @@ struct Entry{
         activeShader = ResourceManager::GetShader("UI Shader");
 
         glBindVertexArray(VAO[i++]);
-        activeShader->Apply(camera);
+        activeShader->Apply(camera.get());
         for (auto mesh : uiSprites) {
             auto renderer = mesh->entity()->GetComponent<Renderer>();
             renderer->ApplyData(*activeShader);

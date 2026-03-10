@@ -10,8 +10,8 @@ namespace EisEngine::systems {
     { engine.onBeforeUpdate.addListener([&] (Game &game) { SyncBodiesToTransforms(game);});}
 
     void PhysicsUpdater::SyncBodiesToTransforms(Game &engine) {
-        if(!engine.componentManager.hasComponentOfType<PhysicsBody>())
+        if(!engine.componentManager->hasComponentOfType<PhysicsBody>())
             return;
-        engine.componentManager.forEachComponent<PhysicsBody>([&](PhysicsBody &body) {body.SyncPhysics();});
+        engine.componentManager->forEachComponent<PhysicsBody>([&](PhysicsBody &body) {body.SyncPhysics();});
     }
 }

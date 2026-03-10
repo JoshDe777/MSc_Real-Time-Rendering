@@ -59,7 +59,7 @@ namespace EisEngine::components {
         bodyDef.position = transform->GetGlobalPosition();
         bodyDef.angle = transform->GetLocalRotation().z;
         bodyDef.userData.pointer = owner;
-        body = engine.physics.CreateBody(bodyDef);
+        body = engine.physics->CreateBody(bodyDef);
 
         b2PolygonShape bodyShape;
         bodyShape.Set(rawVertices.data(),

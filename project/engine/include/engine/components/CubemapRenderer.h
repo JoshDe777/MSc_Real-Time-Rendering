@@ -16,11 +16,11 @@ namespace EisEngine {
             CubemapRenderer(CubemapRenderer &&other) noexcept;
 
             virtual void ApplyData(Shader& shader);
-            void SetCubemapTexture(Cubemap* newTex) {texture = newTex;}
-            Cubemap* GetTexture() {return texture;}
+            void SetCubemapTexture(Cubemap* newTex) {texture = static_cast<shared_ptr<Cubemap>>(newTex);}
+            Cubemap* GetTexture() {return texture.get();}
         protected:
             void Invalidate() override;
-            Cubemap* texture;
+            shared_ptr<Cubemap> texture;
         };
     }
 } // EisEngine

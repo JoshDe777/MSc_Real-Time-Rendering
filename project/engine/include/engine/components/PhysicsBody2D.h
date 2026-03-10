@@ -80,7 +80,7 @@ namespace EisEngine {
             void SyncPhysics();
 
             /// \n The transform associated with the rigidbody.
-            Transform *transform = nullptr;
+            shared_ptr<Transform> transform = nullptr;
 
             /// \n Determines whether the body is a sensor (objects can pass through but collisions are detected).
             bool isSensor = false;

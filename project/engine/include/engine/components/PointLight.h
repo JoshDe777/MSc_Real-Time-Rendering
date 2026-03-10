@@ -29,7 +29,7 @@ namespace EisEngine{
             void SetEmission(const Vector3& v) { mat->SetEmission(v);}
             void SetIntensity(const float& I) { mat->SetIntensity(I);}
         private:
-            Material* mat;
+            shared_ptr<Material> mat;
         };
     }
 }

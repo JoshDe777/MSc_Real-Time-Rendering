@@ -46,7 +46,7 @@ namespace EisEngine::systems {
         [[nodiscard]] int GetHeight() const { return m_screenHeight;}
 
         /// \n A pointer to the transform assigned to this object.
-        Transform *transform;
+        shared_ptr<Transform> transform;
         /// \n Calculates the projection matrix, representing the transformation from
         /// camera space into 2D screen coordinates.
         [[nodiscard]] glm::mat4 GetProjectionMatrix() const;
@@ -64,7 +64,7 @@ namespace EisEngine::systems {
         void LookAt(const Vector3& pos) const;
     private:
         /// \n A pointer to the entity assigned to this object.
-        Entity *entity;
+        shared_ptr<Entity> entity;
 
         /// \n The camera's aspect ratio, as width/height.
         float aspectRatio;

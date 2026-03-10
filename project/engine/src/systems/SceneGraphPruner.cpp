@@ -8,12 +8,12 @@ namespace EisEngine::systems{
     { game.onBeforeUpdate.addListener([&] (Game &engine) { PruneTransforms(engine);});}
 
     void SceneGraphPruner::PruneTransforms(EisEngine::Game &engine) {
-        if(!engine.componentManager.hasComponentOfType<Transform>())
+        if(!engine.componentManager->hasComponentOfType<Transform>())
             return;
-        engine.componentManager.forEachComponent<Transform>([&] (Transform &transform){
+        engine.componentManager->forEachComponent<Transform>([&] (Transform &transform){
             if (transform.isDeleted() && !transform.entity()->isDeleted()){
                 auto entity = transform.entity();
-                engine.entityManager.deleteEntity(*entity);
+                engine.entityManager->deleteEntity(*entity);
             }
         });
     }

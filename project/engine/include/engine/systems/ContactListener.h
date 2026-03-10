@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <box2d/box2d.h>
 
 namespace EisEngine{
@@ -17,7 +18,7 @@ namespace EisEngine{
             void EndContact(b2Contact* contact) override;
         private:
             /// \n a pointer to the engine instance.
-            Game *engine = nullptr;
+            Game* engine = nullptr;
         };
     }
 }

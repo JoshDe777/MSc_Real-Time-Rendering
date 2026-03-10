@@ -61,20 +61,17 @@ namespace EisEngine {
         event_t onEntityStart;
 
         /// \n the game's component manager.
-        ComponentManager componentManager;
+        unique_ptr<ComponentManager> componentManager;
         /// \n the game's entity manager.
-        EntityManager entityManager;
+        unique_ptr<EntityManager> entityManager;
         /// \n The game context. Gives information about the window / software side of the game.
-        Context context;
+        unique_ptr<Context> context;
         /// \n the main camera rendering the scene.
-        Camera camera;
+        unique_ptr<Camera> camera;
         /// \n The system running game physics.
-        PhysicsSystem physics;
+        unique_ptr<PhysicsSystem> physics;
         /// \n The system synchronizing transforms and rigidbodies.
-        PhysicsUpdater physicsUpdater;
-
-        /// \n a transform component determining the game's origin point (0, 0, 0).
-        Transform *origin = nullptr;
+        unique_ptr<PhysicsUpdater> physicsUpdater;
     protected:
         /// \n Utility function called every frame.
         virtual void update(GLFWwindow *window);
@@ -86,14 +83,14 @@ namespace EisEngine {
         void GameLoop();
 
         /// \n A system used to draw lines.
-        RenderingSystem renderingSystem;
+        unique_ptr<RenderingSystem> renderingSystem;
         /// \n A system tasked with managing transform relations.
-        SceneGraphPruner sceneGraphPruner;
+        unique_ptr<SceneGraphPruner> sceneGraphPruner;
         /// \n A system tasked with updating transforms.
-        SceneGraphUpdater sceneGraphUpdater;
+        unique_ptr<SceneGraphUpdater> sceneGraphUpdater;
     private:
         /// \n The EisEngine input manager.
-        Input input;
+        unique_ptr<Input> input;
         /// \n The EisEngine time manager.
         Time time;
     };

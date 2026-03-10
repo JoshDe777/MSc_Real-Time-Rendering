@@ -62,7 +62,7 @@ namespace EisEngine {
             /// \n A list of b2Bodies scheduled for removal.
             static std::vector<b2Body*> bodiesToDelete;
             /// \n A pointer to the engine instance.
-            static Game* engine;
+            static shared_ptr<Game> engine;
         };
     }
 }

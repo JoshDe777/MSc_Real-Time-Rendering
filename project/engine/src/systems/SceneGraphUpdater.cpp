@@ -13,10 +13,10 @@ namespace EisEngine::systems{
     }
 
     void SceneGraphUpdater::UpdateTransforms(EisEngine::Game &game) {
-        if(!game.componentManager.hasComponentOfType<Transform>())
+        if(!game.componentManager->hasComponentOfType<Transform>())
             return;
 
-        game.componentManager.forEachComponent<Transform>([&] (Transform &transform){
+        game.componentManager->forEachComponent<Transform>([&] (Transform &transform){
             if(!transform.IsDirty())
                 return;
 

@@ -60,7 +60,7 @@ namespace EisEngine::ecs {
         }
 
         /// \n a pointer to the transform assigned to an entity.
-        Transform* transform = nullptr;
+        shared_ptr<Transform> transform = nullptr;
         /// \n A void pointer allowing for users to bridge between their systems and an EisEngine entity.
         void* user_data = nullptr;
 

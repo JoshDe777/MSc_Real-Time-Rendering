@@ -7,7 +7,7 @@ namespace EisEngine::systems {
     // static var definitions
     std::vector<b2Body*> PhysicsSystem::bodiesToDelete = {};
     const Vector2 PhysicsSystem::EarthGravityVector = Vector2{0, -9.81f};
-    Game* PhysicsSystem::engine = nullptr;
+    shared_ptr<Game> PhysicsSystem::engine = nullptr;
 
 // helper functions:
 
@@ -52,7 +52,7 @@ namespace EisEngine::systems {
     PhysicsSystem::PhysicsSystem(EisEngine::Game &game, EisEngine::Vector2 _gravity) :
     System(game), gravity(_gravity) {
         if(!engine)
-            engine = &game;
+            engine = static_cast<shared_ptr<Game>>(&game);
 
         game.onAfterUpdate.addListener([&] (Game &game){ Step();});
 
@@ -89,7 +89,7 @@ namespace EisEngine::systems {
                                                                       const Vector2& v3,
                                                                       const Vector2& v4) {
         std::vector<PhysicsBody2D*> bodiesInRange = {};
-        engine->componentManager.forEachComponent<PhysicsBody2D>([&] (PhysicsBody2D& body){
+        engine->componentManager->forEachComponent<PhysicsBody2D>([&] (PhysicsBody2D& body){
             if(IsVectorWithinBounds(body.entity()->transform->GetGlobalPosition(), v1, v2, v3, v4))
                 bodiesInRange.emplace_back(&body);
         });

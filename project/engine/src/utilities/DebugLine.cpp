@@ -9,8 +9,8 @@ namespace EisEngine {
     using Renderer = EisEngine::components::Renderer;
 
     DebugLine::DebugLine(Game &engine, const Vector3 &startPoint, const Vector3 &endPoint, const Color& color) {
-        this->engine = &engine;
-        entity = &engine.entityManager.createEntity("DebugLine");
+        this->engine = static_cast<shared_ptr<Game>>(&engine);
+        entity = static_cast<shared_ptr<Entity>>(&engine.entityManager->createEntity("DebugLine"));
         transform = entity->transform;
         transform->SetLocalScale(Vector3::one);
         auto lineMat = Material(Vector3(color.r, color.g, color.b));
@@ -19,7 +19,7 @@ namespace EisEngine {
         entity->AddComponent<Line>(startPoint, endPoint);
     }
 
-    void DebugLine::Invalidate() { engine->entityManager.deleteEntity(*entity);}
+    void DebugLine::Invalidate() { engine->entityManager->deleteEntity(*entity);}
 
     void DebugLine::UpdateLinePosition(const Vector3 &startPoint, const Vector3 &endPoint)
     { entity->GetComponent<Line>()->SetPoints(startPoint, endPoint);}

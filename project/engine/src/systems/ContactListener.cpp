@@ -21,9 +21,9 @@ namespace EisEngine{
 
             // get entities from IDs
             if(entityID_A != invalidID)
-                entityA = engine->entityManager.getEntity(entityID_A);
+                entityA = engine->entityManager->getEntity(entityID_A);
             if(entityID_A != invalidID)
-                entityB = engine->entityManager.getEntity(entityID_B);
+                entityB = engine->entityManager->getEntity(entityID_B);
 
             // get colliders and call collision enter methods.
             if(entityA != nullptr && entityB != nullptr){
@@ -46,9 +46,9 @@ namespace EisEngine{
 
             // get entities from ids
             if(entityID_A != invalidID)
-                entityA = engine->entityManager.getEntity(entityID_A);
+                entityA = engine->entityManager->getEntity(entityID_A);
             if(entityID_A != invalidID)
-                entityB = engine->entityManager.getEntity(entityID_B);
+                entityB = engine->entityManager->getEntity(entityID_B);
 
             // get collider components and call collision exit methods.
             if(entityA != nullptr && entityB != nullptr){

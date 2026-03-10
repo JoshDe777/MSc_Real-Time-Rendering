@@ -57,7 +57,7 @@ namespace EisEngine{
             void DrawTransparentObjects(std::vector<Mesh3D*>& transparentMeshes, Shader* activeShader);
 
             /// \n A pointer to the active camera object.
-            Camera* camera = nullptr;
+            shared_ptr<Camera> camera = nullptr;
             /// \n VAO array storing a VAO for each type of mesh in order: Mesh2D, Line, Mesh3D, SpriteMesh, uiMesh.
             std::array<GLuint, 5> VAO;
             /// \n FBO array storing a depth-mapping FBO.
@@ -69,7 +69,7 @@ namespace EisEngine{
             /// \n An event called every time the window resizes.
             static Event onResize;
             /// \n A list of entities enabling other entities in a certain radius of them to be lit.
-            static std::vector<Entity*> Loaders;
+            static std::vector<shared_ptr<Entity>> Loaders;
             /// \n A pointer to the entity marked as a skybox.
             static shared_ptr<Entity> skybox;
             /// \n A reference of Point Lights by approximate position in world 2D (x, z) space.

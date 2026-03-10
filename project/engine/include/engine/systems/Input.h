@@ -4,12 +4,17 @@
 #include "engine/ecs/System.h"
 #include "engine/utilities/Vector2.h"
 
+#include <memory>
+
 namespace EisEngine {
     using System = ecs::System;
 
     class Input: public System {
         friend Game;
     public:
+        /// \n Creates a new input system.
+        explicit Input(Game &engine);
+
         /// \n Get whether the given keyboard key is pressed in the current frame.
         /// @return true if the given button is being pressed, false otherwise.
         static bool GetKeyDown(KeyCode key);
@@ -37,11 +42,8 @@ namespace EisEngine {
         /// \n Gets how the mouse is being scrolled if at all:
         static void ScrollCallback(GLFWwindow* window, double x, double y);
 
-        /// \n Creates a new input system.
-        explicit Input(Game &engine);
-
         /// \n A pointer to the active window.
-        static GLFWwindow *window;
+        static GLFWwindow* window;
 
         /// \n The mouse's current position on screen.
         static Vector2 _mousePos;

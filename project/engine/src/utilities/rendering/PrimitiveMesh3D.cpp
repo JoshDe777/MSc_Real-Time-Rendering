@@ -216,4 +216,123 @@ namespace EisEngine::rendering {
     const PrimitiveMesh3D PrimitiveMesh3D::skybox = PrimitiveMesh3D(
             skyboxVertices, skyboxIndices
             );
+
+#pragma region Cube Definition
+    const std::vector<Vector3> cubeVertices = {
+            // front
+            Vector3(-0.5f, -0.5f, 0.5f),        //0
+            Vector3(-0.5f, 0.5f, 0.5f),         //1
+            Vector3(0.5f, 0.5f, 0.5f),          //2
+            Vector3(0.5f, -0.5f, 0.5f),         //3
+            // left
+            Vector3(-0.5f, 0.5f, 0.5f),         //4
+            Vector3(-0.5f, -0.5f, 0.5f),        //5
+            Vector3(-0.5f, -0.5f, -0.5f),        //6
+            Vector3(-0.5f, 0.5f, -0.5f),        //7
+            // bottom
+            Vector3(-0.5f, -0.5f, 0.5f),        //8
+            Vector3(0.5f, -0.5f, 0.5f),         //9
+            Vector3(0.5f, -0.5f, -0.5f),        //10
+            Vector3(-0.5f, -0.5f, -0.5f),       //11
+            // right
+            Vector3(0.5f, -0.5f, 0.5f),         //12
+            Vector3(0.5f, 0.5f, 0.5f),          //13
+            Vector3(0.5f, 0.5f, -0.5f),         //14
+            Vector3(0.5f, -0.5f, -0.5f),        //15
+            // back
+            Vector3(-0.5f, -0.5f, -0.5f),       //16
+            Vector3(0.5f, -0.5f, -0.5f),        //17
+            Vector3(0.5f, 0.5f, -0.5f),         //18
+            Vector3(-0.5f, 0.5f, -0.5f),        //19
+            // top
+            Vector3(-0.5f, 0.5f, -0.5f),        //20
+            Vector3(0.5f, 0.5f, -0.5f),         //21
+            Vector3(0.5f, 0.5f, 0.5f),          //22
+            Vector3(-0.5f, 0.5f, 0.5f),         //23
+    };
+
+    const std::vector<unsigned int> cubeIndices = {
+            2, 1, 0,
+            3, 2, 0,
+            14, 13, 12,
+            14, 12, 15,
+            19, 18, 17,
+            19, 17, 16,
+            7, 6, 4,
+            4, 6, 5,
+            8, 9, 11,
+            9, 11, 10,
+            23, 22, 20,
+            22, 21, 20
+    };
+
+    const Vector3 forward = Vector3(0, 0, 1);
+    const Vector3 right = Vector3(1, 0, 0);
+    const Vector3 up = Vector3(0, 1, 0);
+
+    const std::vector<Vector3> cubeNormals = {
+            forward,
+            forward,
+            forward,
+            forward,
+            -right,
+            -right,
+            -right,
+            -right,
+            -up,
+            -up,
+            -up,
+            -up,
+            right,
+            right,
+            right,
+            right,
+            -forward,
+            -forward,
+            -forward,
+            -forward,
+            up,
+            up,
+            up,
+            up
+    };
+
+    const std::vector<Vector2> cubeUVs = {
+            // face 1
+            Vector2(0, 0),
+            Vector2(0, 1),
+            Vector2(1, 1),
+            Vector2(1, 0),
+            // face 2
+            Vector2(1, 1),
+            Vector2(1, 0),
+            Vector2(0, 0),
+            Vector2(0, 1),
+            // face 3
+            Vector2(1, 0),
+            Vector2(0, 0),
+            Vector2(0, 1),
+            Vector2(1, 1),
+            // face 4
+            Vector2(0, 0),
+            Vector2(0, 1),
+            Vector2(1, 1),
+            Vector2(1, 0),
+            // face 5
+            Vector2(1, 0),
+            Vector2(0, 0),
+            Vector2(0, 1),
+            Vector2(1, 1),
+            // face 6
+            Vector2(0, 1),
+            Vector2(1, 1),
+            Vector2(1, 0),
+            Vector2(0, 0),
+    };
+#pragma endregion
+
+    const PrimitiveMesh3D PrimitiveMesh3D::cube = PrimitiveMesh3D(
+            cubeVertices, cubeIndices,
+            &cubeNormals, &cubeUVs
+    );
 }

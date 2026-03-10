@@ -59,7 +59,7 @@ namespace EisEngine::components{
             children(std::move(other.children))
     {
         owner = other.owner;
-        SetParent(other.m_parent);
+        SetParent(other.m_parent.get());
     }
 
     void Transform::Invalidate() {
@@ -73,7 +73,7 @@ namespace EisEngine::components{
         children.clear();
         // remove all entities that aren't marked for deletion. Could result in endless loop!
         if(!entity()->isDeleted())
-            engine.entityManager.deleteEntity(*entity());
+            engine.entityManager->deleteEntity(*entity());
         Component::Invalidate();
     }
 
@@ -209,12 +209,12 @@ namespace EisEngine::components{
     // parent-child-relations
     void Transform::SetParent(Transform *transform) {
         // remove transform from old parent transform?!
-        m_parent = transform;
+        m_parent = static_cast<shared_ptr<Transform>>(transform);
         if (m_parent != nullptr)
             m_parent->AddChild(this);
     }
-    void Transform::AddChild(Transform *transform) {children.insert(transform);}
-    void Transform::RemoveChild(Transform *transform) { children.erase(transform);}
+    void Transform::AddChild(Transform *transform) {children.insert(static_cast<shared_ptr<Transform>>(transform));}
+    void Transform::RemoveChild(Transform *transform) { children.erase(static_cast<shared_ptr<Transform>>(transform));}
 
     glm::mat4 Transform::GetLocalMatrix() {
         auto model = glm::mat4(1.0f);

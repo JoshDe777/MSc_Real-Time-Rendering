@@ -92,9 +92,9 @@ namespace EisEngine {
         //DEBUG_INFO("Processing entity " + (std::string) node->mName.C_Str() + ".")
 
         // Create entity for node & attach to parent if exists.
-        auto nodeEntity = game.entityManager.createEntity(node->mName.C_Str());
+        auto nodeEntity = game.entityManager->createEntity(node->mName.C_Str());
         if(parent){
-            nodeEntity.transform->SetParent(parent->transform);
+            nodeEntity.transform->SetParent(parent->transform.get());
         }
 
         // get transform data & update entity transform
@@ -158,7 +158,7 @@ namespace EisEngine {
         }
 
         // recursively import data following the aiScene graph.
-        auto& rootEntity = game.entityManager.createEntity(path.filename().string());
+        auto& rootEntity = game.entityManager->createEntity(path.filename().string());
         ImportNode(game, scene->mRootNode, scene, path.parent_path(), &rootEntity);
 
         // return the resulting entity.

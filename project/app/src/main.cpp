@@ -1,12 +1,8 @@
 #include <iostream>
-
-#include "Simulation.h"
-
-using Simulation = RTR::Simulation;
+#include "MinotaursMaze.h"
 
 int main(){
     std::cout << "Hello World!" << std::endl;
-    Debug::SetPriority(DebugP);
-    auto sim = Simulation();
-    sim.run();
+    auto maze = MinotaursMaze();
+    maze.run();
 }

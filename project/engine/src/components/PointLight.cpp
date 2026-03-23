@@ -4,6 +4,7 @@
 
 #include "engine/ecs/Entity.h"
 #include "engine/utilities/rendering/Shader.h"
+#include "engine/systems/LightSystem.h"
 
 namespace EisEngine::components {
     PointLight::PointLight(

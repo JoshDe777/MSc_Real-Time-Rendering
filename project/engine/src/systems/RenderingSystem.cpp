@@ -9,45 +9,132 @@
 #define DIST_THRESHOLD 5.0f
 
 namespace EisEngine::systems {
-// helper functions:
-float RenderingSystem::specularFactor = 1.0f;
-int RenderingSystem::n_toon_levels = 8;
-const std::string RenderingSystem::defaultShader = "Blinn-Phong";
-std::string RenderingSystem::active3DShader = "Blinn-Phong";
-const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
+
+#pragma region rendering parameters
+    // specular factor starts at 1
+    float RenderingSystem::specularFactor = 1.0f;
+    // toon levels default to 8
+    int RenderingSystem::n_toon_levels = 8;
+    // no chromatic aberration
+    Vector3 RenderingSystem::eta = Vector3::zero;
+    // 15% ambiant lighting
+    float RenderingSystem::ambient = 0.15f;
+#pragma endregion
+
+#pragma region shader definitions
+    // default to plain Blinn-Phong
+    const std::string RenderingSystem::defaultShader = "Blinn-Phong";
+    std::string RenderingSystem::active3DShader = "Blinn-Phong";
+    const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDict = {
         {"Normal Blinn-Phong", "nMap Blinn-Phong Shader"},
         {"Default Blinn-Phong", "Default Blinn-Phong Shader"},
         {"Cook-Torrance", "Cook-Torrance Shader"},
         {"Toon", "Toon Shader"}/*,
         {"Depth", "Depth Mapping"},
-        {"Glassy", "Glassy Shader"}*/
-};
-Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
-Entity* RenderingSystem::skybox = nullptr;
-Vector3 RenderingSystem::eta = Vector3::zero;
-float RenderingSystem::ambient = 0.15f;
+        {"Glassy", "Glassy Shader"}
+        */
+    };
+#pragma endregion
 
-struct Entry{
-    PointLight* L;
-    float dist2;
-};
+#pragma region other definitions
+    Entity* RenderingSystem::skybox = nullptr;
+    Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
 
-    // used to sort entities by ascending z position.
-    bool CompareZValues(SpriteMesh* a, SpriteMesh* b)
-    { return a->entity()->transform->GetGlobalPosition().z < b->entity()->transform->GetGlobalPosition().z;}
+    struct LightEntry{
+        PointLight* L;
+        float dist2;
+    };
 
-// rendering system methods:
     std::vector<Entity*> RenderingSystem::Loaders = {};
+#pragma endregion
 
-    constexpr float CELL_SIZE = 40.0f;
+#pragma region non-class helper functions
+    // used to sort entities by ascending z position.
+    bool CompareZValues(SpriteMesh* a, SpriteMesh* b) {
+        return a->entity()->transform->GetGlobalPosition().z < b->entity()->transform->GetGlobalPosition().z;
+    }
+#pragma endregion
 
-    inline Vector2 WorldToCell(const glm::vec3& pos) {
-        return Vector2{
-                floor(pos.x / CELL_SIZE),
-                floor(pos.z / CELL_SIZE)
-        };
+    // rendering system constructor
+    RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
+        #pragma region setup
+        SetActiveShader("Default Blinn-Phong");
+
+        camera = engine.camera.get();
+        if(!camera)
+            DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
+
+        engine.onUpdate.addListener([&] (Game& engine){ Draw();});
+        #pragma endregion
+
+        #pragma region buffer initialization
+        VAO = {};
+        for(unsigned int & i : VAO)
+            glGenVertexArrays(1, &i);
+
+        int width, height;
+        glfwGetWindowSize(engine.getWindow(), &width, &height);
+        // init FBOs
+        InitFBO(0, Vector2((float) width, (float) height));
+        InitFBO(1, Vector2((float) width, (float) height));
+        onResize.addListener([this](const Vector2& v){
+            ResizeFBOItems(v);
+        });
+        // add callback to window resize to reallocate depth texture size & rbo sizes on window resize.
+        glfwSetWindowSizeCallback(engine.getWindow(), [](GLFWwindow* window, int width, int height){
+            RenderingSystem::onResize.invoke(Vector2((float) width, (float) height));
+        });
+        #pragma endregion
+
+        #pragma region shader program creation
+        // generate default shader (mesh2D & lines)
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
+                                                 "shaders/frag-material_debug_unlit.frag",
+                                                 "Default Shader");
+        // generate default sprite shader
+        ResourceManager::GenerateShaderFromFiles( "shaders/vert-shader3D.vert",
+                                                  "shaders/frag-sprite_unlit.frag",
+                                                  "Sprite Shader");
+        // generate ui sprite shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
+                                                 "shaders/frag-sprite_unlit.frag",
+                                                 "UI Shader");
+        // generate regular Blinn-Phong shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-blinn_phong.frag",
+                                                 "Default Blinn-Phong Shader");
+        // generate normal mapped Blinn-Phong shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-nMap_blinn_phong.frag",
+                                                 "nMap Blinn-Phong Shader");
+        // generate Cook-Torrance shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-cook_torrance.frag",
+                                                 "Cook-Torrance Shader");
+        // generate Toon shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-toon.frag",
+                                                 "Toon Shader");
+
+        // generate Depth Mapping shader
+        /*ResourceManager::GenerateShaderFromFiles("shaders/vert-geometry_debug.vert",
+                                                 "shaders/frag-depth_mapping.frag",
+                                                 "Depth Mapping");
+
+        // generate Glassy shader
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
+                                                 "shaders/frag-glassy.frag",
+                                                 "Glassy Shader");*/
+
+        ResourceManager::GenerateShaderFromFiles("shaders/vert-skybox.vert",
+                                                 "shaders/frag-skybox.frag",
+                                                 "Skybox Shader");
+        #pragma endregion
+
+        glDisable(GL_CULL_FACE);
     }
 
+#pragma region rendering system variable setters
     void RenderingSystem::MarkAsLoader(EisEngine::ecs::Entity *ptr) {
         Loaders.push_back(ptr);
     }
@@ -66,7 +153,9 @@ struct Entry{
     void RenderingSystem::SetSkyboxEntity(EisEngine::ecs::Entity *ptr) {
         skybox = ptr;
     }
+#pragma endregion
 
+#pragma region glassy shader setup
     void RenderingSystem::InitFBO(const int& index, const Vector2& screenDims) {
         // gen framebuffer
         glGenFramebuffers(1, &FBO[index]);
@@ -77,15 +166,15 @@ struct Entry{
         glBindTexture(GL_TEXTURE_2D, depthTex[index]);
 
         glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_R32F,
-            (int) screenDims.x,
-            (int) screenDims.y,
-            0,
-            GL_RED,
-            GL_FLOAT,
-            nullptr
+                GL_TEXTURE_2D,
+                0,
+                GL_R32F,
+                (int) screenDims.x,
+                (int) screenDims.y,
+                0,
+                GL_RED,
+                GL_FLOAT,
+                nullptr
         );
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -94,21 +183,21 @@ struct Entry{
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0,
-            GL_TEXTURE_2D,
-            depthTex[index],
-            0
+                GL_FRAMEBUFFER,
+                GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D,
+                depthTex[index],
+                0
         );
 
         // gen RBO for depth cache (?)
         glGenRenderbuffers(1, &RBO[index]);
         glBindRenderbuffer(GL_RENDERBUFFER, RBO[index]);
         glRenderbufferStorage(
-            GL_RENDERBUFFER,
-            GL_DEPTH_COMPONENT24,
-            (int) screenDims.x,
-            (int) screenDims.y
+                GL_RENDERBUFFER,
+                GL_DEPTH_COMPONENT24,
+                (int) screenDims.x,
+                (int) screenDims.y
         );
 
         glFramebufferRenderbuffer(
@@ -167,113 +256,14 @@ struct Entry{
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }
+#pragma endregion
 
-    RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
-        SetActiveShader("Default Blinn-Phong");
+#pragma region drawing process
+    void RenderingSystem::Prepare3DDraw(Mesh3D& mesh, Shader* activeShader){
+        // could be streamlined? maybe a shader properties object
+        // that discards value assignments if don't exist in shader.
 
-        camera = engine.camera.get();
-        if(!camera)
-            DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
-
-        engine.onUpdate.addListener([&] (Game& engine){ Draw();});
-
-        VAO = {};
-        for(unsigned int & i : VAO)
-            glGenVertexArrays(1, &i);
-
-        int width, height;
-        glfwGetWindowSize(engine.getWindow(), &width, &height);
-        // init FBOs
-        InitFBO(0, Vector2((float) width, (float) height));
-        InitFBO(1, Vector2((float) width, (float) height));
-        onResize.addListener([this](const Vector2& v){
-           ResizeFBOItems(v);
-        });
-        // add callback to window resize to reallocate depth texture size & rbo sizes on window resize.
-        glfwSetWindowSizeCallback(engine.getWindow(), [](GLFWwindow* window, int width, int height){
-           RenderingSystem::onResize.invoke(Vector2((float) width, (float) height));
-        });
-
-        // generate default shader (mesh2D & lines)
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
-                                                 "shaders/frag-material_debug_unlit.frag",
-                                                 "Default Shader");
-        // generate default sprite shader
-        ResourceManager::GenerateShaderFromFiles( "shaders/vert-shader3D.vert",
-                                                  "shaders/frag-sprite_unlit.frag",
-                                                  "Sprite Shader");
-        // generate ui sprite shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-no_normals.vert",
-                                                 "shaders/frag-sprite_unlit.frag",
-                                                 "UI Shader");
-        // generate regular Blinn-Phong shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
-                                                 "shaders/frag-blinn_phong.frag",
-                                                 "Default Blinn-Phong Shader");
-        // generate normal mapped Blinn-Phong shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
-                                                 "shaders/frag-nMap_blinn_phong.frag",
-                                                 "nMap Blinn-Phong Shader");
-        // generate Cook-Torrance shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
-                                                 "shaders/frag-cook_torrance.frag",
-                                                 "Cook-Torrance Shader");
-        // generate Toon shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
-                                                 "shaders/frag-toon.frag",
-                                                 "Toon Shader");
-
-        // generate Depth Mapping shader
-        /*ResourceManager::GenerateShaderFromFiles("shaders/vert-geometry_debug.vert",
-                                                 "shaders/frag-depth_mapping.frag",
-                                                 "Depth Mapping");
-
-        // generate Glassy shader
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-shader3D.vert",
-                                                 "shaders/frag-glassy.frag",
-                                                 "Glassy Shader");*/
-
-        ResourceManager::GenerateShaderFromFiles("shaders/vert-skybox.vert",
-                                                 "shaders/frag-skybox.frag",
-                                                 "Skybox Shader");
-
-        glDisable(GL_CULL_FACE);
-    }
-
-    void RenderingSystem::BuildLightGrid() {
-        LightGrid.clear();
-
-        if(engine.componentManager->hasComponentOfType<PointLight>()){
-            engine.componentManager->forEachComponent<PointLight>([&](PointLight& light){
-                auto pos = light.position();
-                Vector2 cell = WorldToCell(pos);
-                LightGrid[cell].push_back(light.GetOwner());
-            });
-        }
-    }
-
-    std::vector<int> RenderingSystem::QueryNearbyLights(const glm::vec3& objectPos) {
-        Vector2 c = WorldToCell(objectPos);
-
-        std::vector<int> result;
-        result.reserve(16); // fast
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                Vector2 nc{ c.x + dx, c.y + dz };
-
-                auto it = LightGrid.find(nc);
-                if (it != LightGrid.end()) {
-                    const auto& list = it->second;
-                    result.insert(result.end(), list.begin(), list.end());
-                }
-            }
-        }
-
-        return result;
-    }
-
-    void RenderingSystem::PrepareDraw(Mesh3D& mesh, Shader* activeShader){
+#pragma region model matrix calculations
         auto model = mesh.entity()->transform->GetModelMatrix();
         activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
         // model matrices
@@ -288,16 +278,15 @@ struct Entry{
             normalMat[2] = glm::normalize(normalMat[2]);
         }
         activeShader->setMatrix("normalMat", normalMat);
-
+#pragma endregion
 
         // material
         auto renderer = mesh.entity()->GetComponent<Renderer>();
         if(renderer)
             renderer->ApplyData(*activeShader);
 
-        // lighting x LOD
+#pragma region lighting calculations
         auto pos = mesh.entity()->transform->GetGlobalPosition();
-        //pos.y = 2;
         float lodDist = 100000000000000000.0f;
         if(!Loaders.empty())
             for(auto obj : Loaders){
@@ -312,11 +301,11 @@ struct Entry{
             activeShader->setInt("LOD", 1);
 
             // get lights in grid
-            auto results = QueryNearbyLights(pos);
-            std::vector<Entry> list;
+            auto results = lightSystem->QueryNearbyLights(pos);
+            std::vector<LightEntry> list;
             list.reserve(results.size());
 
-            // for each entry in the results, create an Entry object
+            // for each entry in the results, create an LightEntry object
             for (int id : results) {
                 auto* e = engine.entityManager->getEntity(id);
                 if (!e) continue;
@@ -345,140 +334,32 @@ struct Entry{
             // else default to ambient.
             activeShader->setInt("LOD", 0);
         }
+#pragma endregion
 
         activeShader->setInt("n_levels", n_toon_levels);
     }
 
-    void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
-        activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
-        activeShader->Apply(camera);
-        activeShader->setFloat("ambient", ambient);
-        activeShader->setFloat("specular", specularFactor);
-
-        // bind thickness fbo
-        // clear color & depth
-        // cull front faces
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        glDisable(GL_BLEND);
-        glDepthMask(GL_TRUE);
-
-        for(auto mesh: transparentMeshes){
-            // I think I just need geometry for this one; Edit to fit.
-            // PrepareDraw(*mesh, activeShader);
-            auto model = mesh->entity()->transform->GetModelMatrix();
-            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-            auto view = camera->CalculateViewMatrix();
-            activeShader->setMatrix("mv", view * model);
-            mesh->draw(activeShader->GetShaderID());
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glCullFace(GL_BACK);
-        // redo a second pass for front face.
-
-        for(auto mesh: transparentMeshes){
-            // I think I just need geometry for this one; Edit to fit.
-            // PrepareDraw(*mesh, activeShader);
-            auto model = mesh->entity()->transform->GetModelMatrix();
-            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-            auto view = camera->CalculateViewMatrix();
-            activeShader->setMatrix("mv", view * model);
-            mesh->draw(activeShader->GetShaderID());
-        }
-
-        // bind "base" fbo (none)
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_DEPTH_TEST);
-        // turn off depth writing
-        glDepthMask(GL_FALSE);
-        glDisable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-
-        activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
-        activeShader->Apply(camera);
-        activeShader->setFloat("ambient", ambient);
-        activeShader->setFloat("specular", specularFactor);
-
-        auto dims = engine.context->GetWindowSize();
-        activeShader->setInt("screenWidth", (int) dims.x);
-        activeShader->setInt("screenHeight", (int) dims.y);
-        activeShader->setVector("eta", eta);
-
-        if(skybox == nullptr)
-            return;
-
-        // apply cubemap
-        auto renderer = skybox->GetComponent<CubemapRenderer>();
-        renderer->ApplyData(*activeShader);
-
-        // bind back depth texture
-        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_BACK_FACE);
-        glBindTexture(GL_TEXTURE_2D, depthTex[0]);
-        // bind front depth texture
-        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_FRONT_FACE);
-        glBindTexture(GL_TEXTURE_2D, depthTex[1]);
-
-        GLint boundCube;
-        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
-        glGetIntegerv(GL_TEXTURE_BINDING_CUBE_MAP, &boundCube);
-        assert(boundCube != 0);
-
-        for(auto mesh: transparentMeshes){
-            PrepareDraw(*mesh, activeShader);
-            mesh->draw(activeShader->GetShaderID());
-        }
-
-        glDepthMask(GL_TRUE);
-        glDisable(GL_BLEND);
+    void RenderingSystem::DrawMesh2D(EisEngine::components::Mesh2D &mesh,
+                                     EisEngine::rendering::Shader *activeShader) {
+        auto model = mesh.entity()->transform->GetModelMatrix();
+        activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+        auto renderer = mesh.entity()->GetComponent<Renderer>();
+        if(renderer)
+            renderer->ApplyData(*activeShader);
+        mesh.draw();
     }
 
-    void RenderingSystem::Draw() {
-        if(LightGrid.empty())
-            BuildLightGrid();
+    void RenderingSystem::DrawLine(EisEngine::systems::RenderingSystem::Line &mesh,
+                                   EisEngine::rendering::Shader *activeShader) {
+        auto renderer = mesh.entity()->GetComponent<Renderer>();
+        if(renderer)
+            renderer->ApplyData(*activeShader);
+        auto model = mesh.entity()->transform->GetModelMatrix();
+        activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+        mesh.draw();
+    }
 
-        // re-enable depth testing for 'regular' entities.
-        glEnable(GL_DEPTH_TEST);
-        auto i = 0;
-
-        #pragma region Default Shader
-        auto activeShader = ResourceManager::GetShader("Default Shader");
-
-        // Mesh2D rendering
-        glBindVertexArray(VAO[i++]);
-        if(engine.componentManager->hasComponentOfType<Mesh2D>()){
-            activeShader->Apply(camera);
-            engine.componentManager->forEachComponent<Mesh2D>([&](Mesh2D& mesh){
-                auto model = mesh.entity()->transform->GetModelMatrix();
-                activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                auto renderer = mesh.entity()->GetComponent<Renderer>();
-                if(renderer)
-                    renderer->ApplyData(*activeShader);
-                mesh.draw();
-            });
-        }
-
-        // line rendering (same shader as Mesh2D's)
-        glBindVertexArray(VAO[i++]);
-        if(engine.componentManager->hasComponentOfType<Line>()){
-            engine.componentManager->forEachComponent<Line>([&] (Line& mesh){
-                auto renderer = mesh.entity()->GetComponent<Renderer>();
-                if(renderer)
-                    renderer->ApplyData(*activeShader);
-                auto model = mesh.entity()->transform->GetModelMatrix();
-                activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
-                mesh.draw();
-            });
-        }
-        #pragma endregion
-
-        #pragma region 3D rendering
-        glBindVertexArray(VAO[i++]);
+    void RenderingSystem::DrawSkybox(Shader* activeShader) {
         if(skybox != nullptr){
             glDisable(GL_CULL_FACE);
 
@@ -503,6 +384,143 @@ struct Entry{
             glDepthFunc(GL_LESS);
             glDepthMask(GL_TRUE);
         }
+    }
+
+    void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
+        // no reflection if no skybox -> abort rendering (would be clear anyways >:p
+        if(skybox == nullptr)
+            return;
+
+        // shader setup
+        activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
+        activeShader->Apply(camera);
+        activeShader->setFloat("ambient", ambient);
+        activeShader->setFloat("specular", specularFactor);
+
+#pragma region backward pass
+        // bind thickness fbo
+        // clear color & depth
+        // cull front faces
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO[0]);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
+
+        for(auto mesh: transparentMeshes){
+            // I think I just need geometry for this one; Edit to fit.
+            // Prepare3DDraw(*mesh, activeShader);
+            auto model = mesh->entity()->transform->GetModelMatrix();
+            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+            auto view = camera->CalculateViewMatrix();
+            activeShader->setMatrix("mv", view * model);
+            mesh->draw(activeShader->GetShaderID());
+        }
+#pragma endregion
+
+        // redo a second pass for front face.
+#pragma region forward pass
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO[1]);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_BACK);
+
+        for(auto mesh: transparentMeshes){
+            // I think I just need geometry for this one; Edit to fit.
+            // Prepare3DDraw(*mesh, activeShader);
+            auto model = mesh->entity()->transform->GetModelMatrix();
+            activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
+            auto view = camera->CalculateViewMatrix();
+            activeShader->setMatrix("mv", view * model);
+            mesh->draw(activeShader->GetShaderID());
+        }
+
+#pragma endregion
+
+#pragma region glassy shader setup
+        // bind "base" fbo (none)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_DEPTH_TEST);
+        // turn off depth writing
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
+        activeShader->Apply(camera);
+        activeShader->setFloat("ambient", ambient);
+        activeShader->setFloat("specular", specularFactor);
+
+        auto dims = engine.context->GetWindowSize();
+        activeShader->setInt("screenWidth", (int) dims.x);
+        activeShader->setInt("screenHeight", (int) dims.y);
+        activeShader->setVector("eta", eta);
+#pragma endregion
+
+#pragma region sampler assignments
+        // apply cubemap
+        auto renderer = skybox->GetComponent<CubemapRenderer>();
+        renderer->ApplyData(*activeShader);
+
+        // bind back depth texture
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_BACK_FACE);
+        glBindTexture(GL_TEXTURE_2D, depthTex[0]);
+        // bind front depth texture
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::DEPTH_FRONT_FACE);
+        glBindTexture(GL_TEXTURE_2D, depthTex[1]);
+
+        GLint boundCube;
+        glActiveTexture(GL_TEXTURE0 + UniformSamplerIndices::CUBEMAP);
+        glGetIntegerv(GL_TEXTURE_BINDING_CUBE_MAP, &boundCube);
+        assert(boundCube != 0);
+#pragma endregion
+
+        for(auto mesh: transparentMeshes){
+            Prepare3DDraw(*mesh, activeShader);
+            mesh->draw(activeShader->GetShaderID());
+        }
+
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
+#pragma endregion
+
+    void RenderingSystem::Draw() {
+        // instruct light grid establishment if not built (remove for dynamic SDS
+        if(lightSystem->LightGrid.empty())
+            lightSystem->BuildLightGrid();
+
+        // re-enable depth testing for 'regular' entities. (just in case)
+        glEnable(GL_DEPTH_TEST);
+        // shader / VAO counter
+        auto i = 0;
+
+        #pragma region Default Shader
+        auto activeShader = ResourceManager::GetShader("Default Shader");
+
+        // Mesh2D rendering
+        glBindVertexArray(VAO[i++]);
+        if(engine.componentManager->hasComponentOfType<Mesh2D>()){
+            activeShader->Apply(camera);
+            engine.componentManager->forEachComponent<Mesh2D>([&](Mesh2D& mesh){
+                DrawMesh2D(mesh, activeShader);
+            });
+        }
+
+        // line rendering (same shader as Mesh2D's)
+        glBindVertexArray(VAO[i++]);
+        if(engine.componentManager->hasComponentOfType<Line>()){
+            engine.componentManager->forEachComponent<Line>([&] (Line& mesh){
+                DrawLine(mesh, activeShader);
+            });
+        }
+        #pragma endregion
+
+        #pragma region 3D rendering
+        glBindVertexArray(VAO[i++]);
+        DrawSkybox(activeShader);
 
         // Mesh3D rendering
         activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
@@ -525,7 +543,7 @@ struct Entry{
                     return;
                 }*/
 
-                PrepareDraw(mesh, activeShader);
+                Prepare3DDraw(mesh, activeShader);
                 mesh.draw(activeShader->GetShaderID());
             });
         }

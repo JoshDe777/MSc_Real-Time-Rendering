@@ -54,8 +54,6 @@ namespace EisEngine {
     void Game::update(GLFWwindow *_) { CheckForCloseWindowSignal();}
 
     Game::~Game() {
-        DEBUG_INFO("Closing Game Cleanly.")
-
         // defined explicitly to find where breaks & errors happen :D
         input.reset();
         physicsUpdater.reset();

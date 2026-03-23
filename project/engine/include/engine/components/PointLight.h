@@ -6,12 +6,13 @@
 
 namespace EisEngine{
     namespace rendering { class Shader; }
-
+    namespace systems { class LightSystem; }
     namespace components {
         using Component = EisEngine::ecs::Component;
         using Shader = EisEngine::rendering::Shader;
 
         class PointLight : public Component {
+            friend class EisEngine::systems::LightSystem;
         public:
             explicit PointLight (
                     Game& game, guid_t owner,

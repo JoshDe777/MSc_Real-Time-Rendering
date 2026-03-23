@@ -2,7 +2,7 @@
 
 namespace Maze {
     Cube::Cube(Game& game) {
-        entity = &game.entityManager->createEntity("Cube");
+        entity = game.entityManager->createEntity("Cube");
         entity->AddComponent<Mesh3D>(PrimitiveMesh3D::cube);
         auto tex = ResourceManager::GenerateTextureFromFile(
                 "textures/wood_inlaid_stone_wall_diff_4k.jpg",

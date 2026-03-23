@@ -7,10 +7,10 @@ namespace Maze {
     class Torch {
     public:
         explicit Torch(Game& game);
-        shared_ptr<Entity> entity = nullptr;
+        Entity* entity = nullptr;
     private:
         unique_ptr<FastNoiseLite> noise;
-        shared_ptr<Renderer> flame = nullptr;
+        Renderer* flame = nullptr;
         float flickerSpeed = 25;
         float animTime = 0.0f;
         float maxIntensity = 0.25f;

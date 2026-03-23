@@ -22,10 +22,10 @@ namespace EisEngine {
             /// @param layer - std::string: The rendering layer for meshes paired with a renderer.
             /// \n Currently supported: {"UI" for UI Elements, and [any other string] for regular rendering}.
             Renderer(Game &engine, guid_t owner,
-                     Texture2D* diffTex = nullptr,
-                     Material* mat = nullptr,
+                     const shared_ptr<Texture2D>& diffTex = nullptr,
+                     const shared_ptr<Material>& mat = nullptr,
                      std::string  layer = "Background",
-                     Texture2D* normMap = nullptr);
+                     const shared_ptr<Texture2D>& normMap = nullptr);
             Renderer(const Renderer &renderer) = delete;
             Renderer(Renderer &&other) noexcept;
 

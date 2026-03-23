@@ -17,6 +17,8 @@ namespace EisEngine::systems {
     /// \n Currently exclusively orthographic projection in -z direction.
     class Camera : public System {
     public:
+        ~Camera() override;
+
         /// \n Creates a new camera for the scene.
         /// @param screenDimensions - Vector2: the width and height of the camera FOV in pixels.
         explicit Camera(Game &engine, const Vector2& screenDimensions, CameraMode cameraMode = PERSPECTIVE);
@@ -46,7 +48,7 @@ namespace EisEngine::systems {
         [[nodiscard]] int GetHeight() const { return m_screenHeight;}
 
         /// \n A pointer to the transform assigned to this object.
-        shared_ptr<Transform> transform;
+        Transform* transform;
         /// \n Calculates the projection matrix, representing the transformation from
         /// camera space into 2D screen coordinates.
         [[nodiscard]] glm::mat4 GetProjectionMatrix() const;
@@ -64,7 +66,7 @@ namespace EisEngine::systems {
         void LookAt(const Vector3& pos) const;
     private:
         /// \n A pointer to the entity assigned to this object.
-        shared_ptr<Entity> entity;
+        Entity* entity;
 
         /// \n The camera's aspect ratio, as width/height.
         float aspectRatio;

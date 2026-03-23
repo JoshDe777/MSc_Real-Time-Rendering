@@ -60,6 +60,11 @@ namespace EisEngine {
         /// \n an event invoked every frame when a behaviour is instantiated.
         event_t onEntityStart;
 
+    private:
+        /// \n The EisEngine time manager.
+        Time time;
+
+    public:
         /// \n the game's component manager.
         unique_ptr<ComponentManager> componentManager;
         /// \n the game's entity manager.
@@ -91,7 +96,5 @@ namespace EisEngine {
     private:
         /// \n The EisEngine input manager.
         unique_ptr<Input> input;
-        /// \n The EisEngine time manager.
-        Time time;
     };
 }

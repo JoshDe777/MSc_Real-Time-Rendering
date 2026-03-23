@@ -9,10 +9,10 @@
 #include <assimp/postprocess.h>
 
 namespace EisEngine {
-    std::map<std::string, std::unique_ptr<Texture2D>> ResourceManager::Textures = {};
-    std::map<std::string, std::unique_ptr<Cubemap>> ResourceManager::Cubemaps = {};
-    std::map<std::string, std::unique_ptr<Material>> ResourceManager::Materials = {};
-    std::map<std::string, std::unique_ptr<Shader>> ResourceManager::Shaders = {};
+    std::map<std::string, std::shared_ptr<Texture2D>> ResourceManager::Textures = {};
+    std::map<std::string, std::shared_ptr<Cubemap>> ResourceManager::Cubemaps = {};
+    std::map<std::string, std::shared_ptr<Material>> ResourceManager::Materials = {};
+    std::map<std::string, std::shared_ptr<Shader>> ResourceManager::Shaders = {};
     Assimp::Importer importer;
 
     Vector3 GetAveragePos(const std::vector<Vector3>& v){
@@ -94,17 +94,17 @@ namespace EisEngine {
         // Create entity for node & attach to parent if exists.
         auto nodeEntity = game.entityManager->createEntity(node->mName.C_Str());
         if(parent){
-            nodeEntity.transform->SetParent(parent->transform.get());
+            nodeEntity->transform->SetParent(parent->transform);
         }
 
         // get transform data & update entity transform
         aiVector3D scale, pos;
         aiQuaternion rotation;
         node->mTransformation.Decompose(scale, rotation, pos);
-        nodeEntity.transform->SetLocalScale(Vector3(scale));
+        nodeEntity->transform->SetLocalScale(Vector3(scale));
         Vector3 eulerRotation = Vector3(glm::eulerAngles(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z)));
-        nodeEntity.transform->SetLocalRotation(eulerRotation);
-        nodeEntity.transform->SetLocalPosition(Vector3(pos));
+        nodeEntity->transform->SetLocalRotation(eulerRotation);
+        nodeEntity->transform->SetLocalPosition(Vector3(pos));
 
         // foreach mesh in node->nMeshes
         for(unsigned int i = 0; i < node->mNumMeshes; i++){
@@ -121,19 +121,19 @@ namespace EisEngine {
 
             // get texture & material data
             auto assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
-            Material* mat = LoadMaterial(assimpMaterial);
+            shared_ptr<Material> mat = LoadMaterial(assimpMaterial);
             auto tex = ImportTextureFromAssimp(assimpMaterial, scene, modelPath);
 
             // add Mesh3D & Renderer components
-            nodeEntity.AddComponent<Mesh3D>(primitive);
-            nodeEntity.AddComponent<Renderer>(tex, mat, "");
+            nodeEntity->AddComponent<Mesh3D>(primitive);
+            nodeEntity->AddComponent<Renderer>(tex, mat, "");
             if(mat->GetEmission() != Vector3::zero)
-                nodeEntity.AddComponent<PointLight>(mat);
+                nodeEntity->AddComponent<PointLight>(mat);
         }
 
         // import all child nodes recursively
         for(unsigned int i = 0; i < node->mNumChildren; i++)
-            ImportNode(game, node->mChildren[i], scene, modelPath, &nodeEntity);
+            ImportNode(game, node->mChildren[i], scene, modelPath, nodeEntity);
     }
 
     ecs::Entity* ResourceManager::Load3DObject(Game& game, const fs::path &path) {
@@ -158,21 +158,21 @@ namespace EisEngine {
         }
 
         // recursively import data following the aiScene graph.
-        auto& rootEntity = game.entityManager->createEntity(path.filename().string());
-        ImportNode(game, scene->mRootNode, scene, path.parent_path(), &rootEntity);
+        auto* rootEntity = game.entityManager->createEntity(path.filename().string());
+        ImportNode(game, scene->mRootNode, scene, path.parent_path(), rootEntity);
 
         // return the resulting entity.
-        return &rootEntity;
+        return rootEntity;
     }
 #pragma endregion
 
 #pragma region Material handling
 
     /// \n Imports material data from an assimp material.
-    Material* ResourceManager::LoadMaterial(const aiMaterial* mat){
+    shared_ptr<Material> ResourceManager::LoadMaterial(const aiMaterial* mat){
         auto matName = std::string(mat->GetName().C_Str());
         if(Materials[matName] == nullptr){
-            Materials[matName] = make_unique<Material>(matName);
+            Materials[matName] = make_shared<Material>(matName);
             auto result = Materials[matName].get();
 
             // get properties:
@@ -209,13 +209,13 @@ namespace EisEngine {
         }
         /*else
             DEBUG_WARN("Attempting to overwrite existing material " + matName + ".")*/
-        return Materials[matName].get();
+        return Materials[matName];
     }
 
     Material *ResourceManager::GetMaterial(const std::string &matname) {
         // always have a default texture at the ready
         if(matname == "default" && !Materials["default"].get())
-            Materials["default"] = std::make_unique<Material>(Material("default"));
+            Materials["default"] = std::make_shared<Material>(Material("default"));
 
         if(Materials.empty()){
             DEBUG_WARN("No textures created in resource manager system.")
@@ -225,23 +225,23 @@ namespace EisEngine {
         return Materials[matname].get();
     }
 
-    std::unique_ptr<Material> ResourceManager::GetMaterialInstance(const std::string &matname) {
+    std::shared_ptr<Material> ResourceManager::GetMaterialInstance(const std::string &matname) {
         // always have a default texture at the ready
         if(matname == "default" && !Materials["default"].get())
-            Materials["default"] = std::make_unique<Material>(Material("default"));
+            Materials["default"] = std::make_shared<Material>(Material("default"));
 
         if(Materials.empty()){
             DEBUG_WARN("No textures created in resource manager system.")
             return nullptr;
         }
 
-        return std::make_unique<Material>(*Materials[matname].get());
+        return std::make_shared<Material>(*Materials[matname].get());
     }
 #pragma endregion
 
 #pragma region Texture handling
     /// \n Imports the texture from a given material.
-    Texture2D* ResourceManager::ImportTextureFromAssimp(
+    shared_ptr<Texture2D> ResourceManager::ImportTextureFromAssimp(
             const aiMaterial* mat, const aiScene* scene, const fs::path& modelPath) {
         const aiTexture *tex = nullptr;
 
@@ -284,16 +284,16 @@ namespace EisEngine {
             stbi_image_free(data);
 
             // Add to texture registry.
-            Textures[textureName] = make_unique<Texture2D>(texture);
+            Textures[textureName] = make_shared<Texture2D>(texture);
         }
         else
             DEBUG_WARN("Attempting to overwrite existing texture " + textureName + ".")
         return GetTexture(textureName);
     }
 
-    Texture2D* ResourceManager::GenerateTextureFromFile( const fs::path &imagePath, const std::string &textureName) {
+    shared_ptr<Texture2D> ResourceManager::GenerateTextureFromFile( const fs::path &imagePath, const std::string &textureName) {
         if (Textures[textureName] == nullptr)
-            Textures[textureName] = std::make_unique<Texture2D>(
+            Textures[textureName] = std::make_shared<Texture2D>(
                     loadTextureFromFile(resolveAssetPath(imagePath)));
         return GetTexture(textureName);
     }
@@ -325,7 +325,7 @@ namespace EisEngine {
         return texture;
     }
 
-    Texture2D *ResourceManager::MakeDummyTexture() {
+    shared_ptr<Texture2D> ResourceManager::MakeDummyTexture() {
         if(Textures["default"] == nullptr){
             Texture2D texture;
 
@@ -337,14 +337,14 @@ namespace EisEngine {
             texture.imageFormat = GL_RGBA;
 
             texture.Generate(width, height, data);
-            Textures["default"] = std::make_unique<Texture2D>(texture);
+            Textures["default"] = std::make_shared<Texture2D>(texture);
         }
         else
             DEBUG_WARN("Attempting to overwrite texture 'default'.")
         return GetTexture("default");
     }
 
-    Texture2D *ResourceManager::MakeDummyNormalMap() {
+    shared_ptr<Texture2D> ResourceManager::MakeDummyNormalMap() {
         if(Textures["default_normal"] == nullptr){
             Texture2D texture;
 
@@ -356,14 +356,14 @@ namespace EisEngine {
             texture.imageFormat = GL_RGBA;
 
             texture.Generate(width, height, data);
-            Textures["default_normal"] = std::make_unique<Texture2D>(texture);
+            Textures["default_normal"] = std::make_shared<Texture2D>(texture);
         }
         else
             DEBUG_WARN("Attempting to overwrite texture 'default_normal'.")
         return GetTexture("default_normal");
     }
 
-    Texture2D *ResourceManager::GetTexture(const std::string &name) {
+    shared_ptr<Texture2D> ResourceManager::GetTexture(const std::string &name) {
         // always have a default texture at the ready
         if(name == "default" && !Textures["default"].get())
             return MakeDummyTexture();
@@ -376,7 +376,7 @@ namespace EisEngine {
             return nullptr;
         }
 
-        return Textures[name].get();
+        return Textures[name];
     }
 #pragma endregion
 
@@ -386,7 +386,7 @@ namespace EisEngine {
                                                        const std::string &cubemapName) {
         // worth considering an 'overwrite' parameter?
         if (Cubemaps[cubemapName] == nullptr /*|| overwrite */){
-            Cubemaps[cubemapName] = std::make_unique<Cubemap>(
+            Cubemaps[cubemapName] = std::make_shared<Cubemap>(
                     loadCubemapFromFiles(imagePaths));
         }
         else
@@ -448,7 +448,7 @@ namespace EisEngine {
                                                      const fs::path &fragmentShaderPath,
                                                      const std::string &shaderName) {
         if(Shaders[shaderName] == nullptr)
-            Shaders[shaderName] = std::make_unique<Shader>(
+            Shaders[shaderName] = std::make_shared<Shader>(
                     loadAndCompileShader(GL_VERTEX_SHADER, vertexShaderPath),
                     loadAndCompileShader(GL_FRAGMENT_SHADER, fragmentShaderPath),
                     shaderName

@@ -15,7 +15,7 @@ namespace EisEngine{
         public:
             explicit PointLight (
                     Game& game, guid_t owner,
-                    Material *mat
+                    shared_ptr<Material> mat
             );
             PointLight(const PointLight &light) = delete;
             PointLight(PointLight &&other) noexcept;

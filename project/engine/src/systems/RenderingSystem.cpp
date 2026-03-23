@@ -23,7 +23,7 @@ const std::unordered_map<std::string, std::string> RenderingSystem::shaderNameDi
         {"Glassy", "Glassy Shader"}*/
 };
 Event<RenderingSystem, const Vector2&> RenderingSystem::onResize = Event();
-shared_ptr<Entity> RenderingSystem::skybox = nullptr;
+Entity* RenderingSystem::skybox = nullptr;
 Vector3 RenderingSystem::eta = Vector3::zero;
 float RenderingSystem::ambient = 0.15f;
 
@@ -37,7 +37,7 @@ struct Entry{
     { return a->entity()->transform->GetGlobalPosition().z < b->entity()->transform->GetGlobalPosition().z;}
 
 // rendering system methods:
-    std::vector<shared_ptr<Entity>> RenderingSystem::Loaders = {};
+    std::vector<Entity*> RenderingSystem::Loaders = {};
 
     constexpr float CELL_SIZE = 40.0f;
 
@@ -49,7 +49,7 @@ struct Entry{
     }
 
     void RenderingSystem::MarkAsLoader(EisEngine::ecs::Entity *ptr) {
-        Loaders.push_back(static_cast<shared_ptr<Entity>>(ptr));
+        Loaders.push_back(ptr);
     }
 
     void RenderingSystem::SetSpecularFactor(const float &val) { specularFactor = val;}
@@ -64,7 +64,7 @@ struct Entry{
     }
 
     void RenderingSystem::SetSkyboxEntity(EisEngine::ecs::Entity *ptr) {
-        skybox = static_cast<shared_ptr<Entity>>(ptr);
+        skybox = ptr;
     }
 
     void RenderingSystem::InitFBO(const int& index, const Vector2& screenDims) {
@@ -171,7 +171,7 @@ struct Entry{
     RenderingSystem::RenderingSystem(EisEngine::Game &engine) : System(engine) {
         SetActiveShader("Default Blinn-Phong");
 
-        camera = static_cast<shared_ptr<Camera>>(engine.camera.get());
+        camera = engine.camera.get();
         if(!camera)
             DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
 
@@ -347,12 +347,11 @@ struct Entry{
         }
 
         activeShader->setInt("n_levels", n_toon_levels);
-        DEBUG_LOG("Finished Preparing Draw.")
     }
 
     void RenderingSystem::DrawTransparentObjects(std::vector<Mesh3D *> &transparentMeshes, Shader* activeShader) {
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Depth"));
-        activeShader->Apply(camera.get());
+        activeShader->Apply(camera);
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
@@ -402,7 +401,7 @@ struct Entry{
         glCullFace(GL_BACK);
 
         activeShader = ResourceManager::GetShader(shaderNameDict.at("Glassy"));
-        activeShader->Apply(camera.get());
+        activeShader->Apply(camera);
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
@@ -453,7 +452,7 @@ struct Entry{
         // Mesh2D rendering
         glBindVertexArray(VAO[i++]);
         if(engine.componentManager->hasComponentOfType<Mesh2D>()){
-            activeShader->Apply(camera.get());
+            activeShader->Apply(camera);
             engine.componentManager->forEachComponent<Mesh2D>([&](Mesh2D& mesh){
                 auto model = mesh.entity()->transform->GetModelMatrix();
                 activeShader->setMatrix("mvp", activeShader->CalculateMVPMatrix(model));
@@ -485,7 +484,7 @@ struct Entry{
 
             DEBUG_OPENGL("Skybox")
             activeShader = ResourceManager::GetShader("Skybox Shader");
-            activeShader->Apply(camera.get());
+            activeShader->Apply(camera);
 
             glDepthMask(GL_FALSE);
             glDepthFunc(GL_LEQUAL);
@@ -507,7 +506,7 @@ struct Entry{
 
         // Mesh3D rendering
         activeShader = ResourceManager::GetShader(shaderNameDict.at(active3DShader));
-        activeShader->Apply(camera.get());
+        activeShader->Apply(camera);
         activeShader->setFloat("ambient", ambient);
         activeShader->setFloat("specular", specularFactor);
 
@@ -546,7 +545,7 @@ struct Entry{
 
         glBindVertexArray(VAO[i++]);
         if(engine.componentManager->hasComponentOfType<SpriteMesh>()){
-            activeShader->Apply(camera.get());
+            activeShader->Apply(camera);
             engine.componentManager->forEachComponent<SpriteMesh>([&] (SpriteMesh& mesh){
                 auto renderer = mesh.entity()->GetComponent<Renderer>();
                 if(!renderer){
@@ -578,7 +577,7 @@ struct Entry{
         activeShader = ResourceManager::GetShader("UI Shader");
 
         glBindVertexArray(VAO[i++]);
-        activeShader->Apply(camera.get());
+        activeShader->Apply(camera);
         for (auto mesh : uiSprites) {
             auto renderer = mesh->entity()->GetComponent<Renderer>();
             renderer->ApplyData(*activeShader);

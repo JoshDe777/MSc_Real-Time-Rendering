@@ -144,15 +144,15 @@ namespace Maze::Map {
         // build meshes here:
         std::string name = "Path " + (std::string) tile.pos;
         auto tilePath = game.entityManager->createEntity(name);
-        tilePath.transform->SetParent(path->transform.get());
+        tilePath->transform->SetParent(path->transform);
         // make vec3 with z = pos.y
-        tilePath.transform->SetLocalPosition(Vector3(tile.pos.x, 0, tile.pos.y));
+        tilePath->transform->SetLocalPosition(Vector3(tile.pos.x, 0, tile.pos.y));
 
         std::string wallName = "Wall " + (std::string) tile.pos;
         auto tileWall = game.entityManager->createEntity(wallName);
-        tileWall.transform->SetParent(walls->transform.get());
-        tileWall.transform->SetLocalScale(Vector3(1, wallSize, 1));
-        tileWall.transform->SetLocalPosition(Vector3(tile.pos.x, wallSize/2, tile.pos.y));
+        tileWall->transform->SetParent(walls->transform);
+        tileWall->transform->SetLocalScale(Vector3(1, wallSize, 1));
+        tileWall->transform->SetLocalPosition(Vector3(tile.pos.x, wallSize/2, tile.pos.y));
 
         std::vector<Vector3> pathVertices = {};
         std::vector<unsigned int> pathIndices = {};
@@ -198,7 +198,7 @@ namespace Maze::Map {
 
         std::vector<Vector3> pathNormals((int)pathVertices.size(), Vector3::up);
 
-        tilePath.AddComponent<Mesh3D>(PrimitiveMesh3D (
+        tilePath->AddComponent<Mesh3D>(PrimitiveMesh3D (
                 pathVertices, pathIndices, &pathNormals, &pathUVs)
         );
 
@@ -207,17 +207,17 @@ namespace Maze::Map {
         auto pathTexture = ResourceManager::GetTexture("path");
         if(!pathTexture)
             pathTexture = ResourceManager::GenerateTextureFromFile("textures/gravelly_sand_diff_4k.jpg", "path");
-        auto pathRenderer = &tilePath.AddComponent<Renderer>(pathTexture);
+        auto pathRenderer = tilePath->AddComponent<Renderer>(pathTexture);
         pathRenderer->material->SetTiling(4.0f);
 
-        tileWall.AddComponent<Mesh3D>(PrimitiveMesh3D(
+        tileWall->AddComponent<Mesh3D>(PrimitiveMesh3D(
                 wallVertices, wallIndices, &wallNormals, &wallUVs)
         );
 
         auto wallTexture = ResourceManager::GetTexture("walls");
         if(!wallTexture)
             wallTexture = ResourceManager::GenerateTextureFromFile("textures/wood_inlaid_stone_wall_diff_4k.jpg", "walls");
-        auto wallRenderer = &tileWall.AddComponent<Renderer>(wallTexture);
+        auto wallRenderer = tileWall->AddComponent<Renderer>(wallTexture);
         wallRenderer->material->SetTiling(4.0f);
 
         if(Math::Mod((float) torchCounter++, (float) tileSkip) != 0)
@@ -255,13 +255,13 @@ namespace Maze::Map {
     }
 
     ProceduralMaze::ProceduralMaze(Game &game) : game(game) {
-        env = &game.entityManager->createEntity("Maze");
+        env = game.entityManager->createEntity("Maze");
 
-        path = &game.entityManager->createEntity("Maze Path");
-        path->transform->SetParent(env->transform.get());
+        path = game.entityManager->createEntity("Maze Path");
+        path->transform->SetParent(env->transform);
 
-        walls = &game.entityManager->createEntity("Maze Walls");
-        walls->transform->SetParent(env->transform.get());
+        walls = game.entityManager->createEntity("Maze Walls");
+        walls->transform->SetParent(env->transform);
 
         Generate();
     }

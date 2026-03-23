@@ -6,7 +6,7 @@ namespace Maze {
     class Minotaur {
     public:
         explicit Minotaur(Game& game);
-        shared_ptr<Entity> entity;
+        Entity* entity;
     private:
         Game& game;
     };

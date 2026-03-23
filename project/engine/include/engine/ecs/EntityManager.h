@@ -25,7 +25,7 @@ namespace EisEngine{
             /// @param tag - std::string: the tag given to the entity. Defaults to 'Untagged'.
             /// @param userData - void*: A pointer to any user-defined object. Defaults to nullptr.
             /// @return Entity& - a reference to the created entity.
-            Entity &createEntity(const std::string &name = "Entity",
+            Entity *createEntity(const std::string &name = "Entity",
                                  const std::string &tag = "Untagged",
                                  void* userData = nullptr);
 

@@ -3,8 +3,8 @@
 namespace Maze {
     using CameraMode = EisEngine::systems::CameraMode;
 
-    CamController::CamController(EisEngine::Game &game, const shared_ptr<Entity>& minotaur, const shared_ptr<Entity>& steve){
-        camera = static_cast<shared_ptr<Camera>>(game.camera.get());
+    CamController::CamController(Game& game, Entity* minotaur, Entity* steve){
+        camera = game.camera.get();
         this->minotaur = minotaur->transform;
         this->steve = steve->transform;
         game.onUpdate.addListener([&](Game& game){
@@ -63,8 +63,8 @@ namespace Maze {
         }
 
         if(Input::GetKeyDown(KeyCode::F)){
-            if(camera->transform->parent() != minotaur.get()){
-                camera->transform->SetParent(minotaur.get());
+            if(camera->transform->parent() != minotaur){
+                camera->transform->SetParent(minotaur);
                 camera->transform->SetLocalPosition(thirdPersonOffset + Vector3::up*3);
                 camera->transform->SetLocalRotation(Vector3(-45, -15, 0));
                 camera->SetCameraMode(CameraMode::PERSPECTIVE);
@@ -80,8 +80,8 @@ namespace Maze {
             }
         }
         else if(Input::GetKeyDown(KeyCode::G)){
-            if(camera->transform->parent() != steve.get()){
-                camera->transform->SetParent(steve.get());
+            if(camera->transform->parent() != steve){
+                camera->transform->SetParent(steve);
                 camera->transform->SetLocalPosition(thirdPersonOffset);
                 camera->transform->SetLocalRotation(Vector3(-45, -15, 0));
                 camera->SetCameraMode(CameraMode::PERSPECTIVE);

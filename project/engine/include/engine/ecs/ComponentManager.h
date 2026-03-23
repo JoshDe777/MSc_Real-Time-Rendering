@@ -25,12 +25,12 @@ namespace EisEngine {
             /// \n Creates a component of the given type and assigns it to an entity.
             /// @return Component& - a reference to the newly created Component.
             template<typename C, typename ...Args>
-            [[nodiscard]] C &addComponent(guid_t owner, Args ...args){
+            [[nodiscard]] C *addComponent(guid_t owner, Args ...args){
                 auto& container = containers[typeid(C).hash_code()];
                 auto component = std::make_unique<C>(engine, owner, args...);
                 container[owner] = std::move(component);
 
-                return *getComponent<C>(owner);
+                return getComponent<C>(owner);
             }
 
             /// \n Gets a Component of the given type from the specified entity.
@@ -100,7 +100,6 @@ namespace EisEngine {
                     const auto &component = componentContainer.find(entityID);
                     const auto componentExistsInContainer = component != componentContainer.end();
                     if(componentExistsInContainer) {
-                        component->second->deleted = true;
                         componentContainer.erase(entityID);
                     }
                 }

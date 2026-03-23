@@ -59,7 +59,7 @@ namespace EisEngine::components{
             children(std::move(other.children))
     {
         owner = other.owner;
-        SetParent(other.m_parent.get());
+        SetParent(other.m_parent);
     }
 
     void Transform::Invalidate() {
@@ -209,12 +209,12 @@ namespace EisEngine::components{
     // parent-child-relations
     void Transform::SetParent(Transform *transform) {
         // remove transform from old parent transform?!
-        m_parent = static_cast<shared_ptr<Transform>>(transform);
+        m_parent = transform;
         if (m_parent != nullptr)
             m_parent->AddChild(this);
     }
-    void Transform::AddChild(Transform *transform) {children.insert(static_cast<shared_ptr<Transform>>(transform));}
-    void Transform::RemoveChild(Transform *transform) { children.erase(static_cast<shared_ptr<Transform>>(transform));}
+    void Transform::AddChild(Transform *transform) {children.insert(transform);}
+    void Transform::RemoveChild(Transform *transform) { children.erase(transform);}
 
     glm::mat4 Transform::GetLocalMatrix() {
         auto model = glm::mat4(1.0f);

@@ -6,14 +6,14 @@ namespace Maze {
     class CamController {
         using event_t = Event<CamController, CamController&>;
     public:
-        explicit CamController(Game& game, const shared_ptr<Entity>& minotaur, const shared_ptr<Entity>& steve);
+        explicit CamController(Game& game, Entity* minotaur, Entity* steve);
         event_t onFocusHold;
     private:
         void Update(Game& game);
 
-        shared_ptr<Camera> camera = nullptr;
-        shared_ptr<Transform> minotaur = nullptr;
-        shared_ptr<Transform> steve = nullptr;
+        Camera* camera = nullptr;
+        Transform* minotaur = nullptr;
+        Transform* steve = nullptr;
 
         bool isPerspective = true;
         bool freeRoam = true;

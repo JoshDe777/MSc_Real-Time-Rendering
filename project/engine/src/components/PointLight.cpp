@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "engine/components/PointLight.h"
 
 #include "engine/ecs/Entity.h"
@@ -6,8 +8,8 @@
 namespace EisEngine::components {
     PointLight::PointLight(
             Game& game, guid_t owner,
-            Material *mat
-    ) : Component(game, owner), mat(mat) { }
+            shared_ptr<Material> mat
+    ) : Component(game, owner), mat(std::move(mat)) { }
     PointLight::PointLight(EisEngine::components::PointLight &&other) noexcept : Component(other) {
         owner = other.owner;
         std::swap(this->mat, other.mat);

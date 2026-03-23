@@ -7,7 +7,7 @@ namespace EisEngine::systems {
     // static var definitions
     std::vector<b2Body*> PhysicsSystem::bodiesToDelete = {};
     const Vector2 PhysicsSystem::EarthGravityVector = Vector2{0, -9.81f};
-    shared_ptr<Game> PhysicsSystem::engine = nullptr;
+    Game* PhysicsSystem::engine = nullptr;
 
 // helper functions:
 
@@ -52,7 +52,7 @@ namespace EisEngine::systems {
     PhysicsSystem::PhysicsSystem(EisEngine::Game &game, EisEngine::Vector2 _gravity) :
     System(game), gravity(_gravity) {
         if(!engine)
-            engine = static_cast<shared_ptr<Game>>(&game);
+            engine = &game;
 
         game.onAfterUpdate.addListener([&] (Game &game){ Step();});
 

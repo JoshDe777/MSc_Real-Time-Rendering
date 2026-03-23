@@ -5,11 +5,11 @@ namespace EisEngine::ecs{
     EntityManager::EntityManager(ComponentManager &componentManager, Game &engine) : componentManager(componentManager)
     { engine.onAfterUpdate.addListener([&](Game &) { purgeEntities();});}
 
-    Entity &EntityManager::createEntity(const std::string &name, const std::string &tag, void* userData) {
+    Entity *EntityManager::createEntity(const std::string &name, const std::string &tag, void* userData) {
         auto guid = entityCounter++;
         auto *entity = new Entity(guid, name, componentManager, tag, userData);
         entities[guid] = std::make_unique<Entity>(*entity);
-        return *getEntity(guid);
+        return getEntity(guid);
     }
 
     Entity *EntityManager::getEntity(const guid_t guid) {

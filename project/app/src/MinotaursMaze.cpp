@@ -10,8 +10,8 @@ MinotaursMaze::MinotaursMaze() : Game("Minotaur's Maze") {
 
     controller = make_shared<CamController>(*this, minotaur->entity, steve->entity);
 
-    RenderingSystem::MarkAsLoader(minotaur->entity.get());
-    RenderingSystem::MarkAsLoader(steve->entity.get());
+    RenderingSystem::MarkAsLoader(minotaur->entity);
+    RenderingSystem::MarkAsLoader(steve->entity);
 }
 
 void MinotaursMaze::DisplayUI() {

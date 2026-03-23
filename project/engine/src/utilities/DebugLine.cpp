@@ -9,13 +9,12 @@ namespace EisEngine {
     using Renderer = EisEngine::components::Renderer;
 
     DebugLine::DebugLine(Game &engine, const Vector3 &startPoint, const Vector3 &endPoint, const Color& color) {
-        this->engine = static_cast<shared_ptr<Game>>(&engine);
-        entity = static_cast<shared_ptr<Entity>>(&engine.entityManager->createEntity("DebugLine"));
+        this->engine = &engine;
+        entity = engine.entityManager->createEntity("DebugLine");
         transform = entity->transform;
         transform->SetLocalScale(Vector3::one);
-        auto lineMat = Material(Vector3(color.r, color.g, color.b));
-        entity->AddComponent<Renderer>(nullptr, &lineMat);
-        //entity->GetComponent<LineRenderer>()->SetColor(color);
+        shared_ptr<Material> lineMat = make_shared<Material>(Vector3(color.r, color.g, color.b));
+        entity->AddComponent<Renderer>(nullptr, lineMat);
         entity->AddComponent<Line>(startPoint, endPoint);
     }
 

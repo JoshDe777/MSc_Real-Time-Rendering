@@ -53,10 +53,10 @@ namespace EisEngine {
         /// @param imagePath - fs::path: the absolute path from the assets folder to the desired file.
         /// @param textureName - std::string: the name of the given texture. Must be unique!
         /// @returns Texture2D*: A pointer to a Texture2D object created from the provided image.
-        static Texture2D* GenerateTextureFromFile(const fs::path& imagePath, const std::string& textureName);
+        static shared_ptr<Texture2D> GenerateTextureFromFile(const fs::path& imagePath, const std::string& textureName);
 
         /// \n fetches a texture using its name.
-        static Texture2D* GetTexture(const std::string& name);
+        static shared_ptr<Texture2D> GetTexture(const std::string& name);
 
         /// \n Generates a cubemap texture from 6 images in order right - left - top - bottom - front - back.
         static Cubemap* GenerateCubemapFromFiles(const std::vector<std::string>& imagePaths, const std::string& cubemapName);
@@ -65,7 +65,7 @@ namespace EisEngine {
         /// \n fetches a material using its name.
         static Material* GetMaterial(const std::string& matname);
         /// \n creates an instance of a material using its name.
-        static std::unique_ptr<Material> GetMaterialInstance(const std::string& matname);
+        static std::shared_ptr<Material> GetMaterialInstance(const std::string& matname);
 
         /// \n fetches a shader using its name.
         static Shader* GetShader(const std::string& name);
@@ -86,13 +86,13 @@ namespace EisEngine {
         static void Clear();
 
         /// \n A dictionary of textures associated to their file name.
-        static std::map<std::string, std::unique_ptr<Texture2D>> Textures;
+        static std::map<std::string, std::shared_ptr<Texture2D>> Textures;
         /// \n A dictionary of textures associated to their file name.
-        static std::map<std::string, std::unique_ptr<Cubemap>> Cubemaps;
+        static std::map<std::string, std::shared_ptr<Cubemap>> Cubemaps;
         /// \n A dictionary of shaders associated to their name.
-        static std::map<std::string, std::unique_ptr<Shader>> Shaders;
+        static std::map<std::string, std::shared_ptr<Shader>> Shaders;
         /// \n A dictionary of materials associated to their name.
-        static std::map<std::string, std::unique_ptr<Material>> Materials;
+        static std::map<std::string, std::shared_ptr<Material>> Materials;
 
         /// \n Compiles a file path to a std::string.
         static std::string ReadText(const fs::path& path);
@@ -113,13 +113,13 @@ namespace EisEngine {
         static Texture2D loadTextureFromFile(const fs::path& filePath);
 
         /// \n loads a texture from an assimp scene.
-        static Texture2D* ImportTextureFromAssimp(const aiMaterial* mat, const aiScene* scene,
+        static shared_ptr<Texture2D> ImportTextureFromAssimp(const aiMaterial* mat, const aiScene* scene,
                                                   const fs::path& modelPath);
 
         /// \n creates a dummy, white texture.
-        static Texture2D* MakeDummyTexture();
+        static shared_ptr<Texture2D> MakeDummyTexture();
         /// \n creates a dummy, blue texture.
-        static Texture2D* MakeDummyNormalMap();
+        static shared_ptr<Texture2D> MakeDummyNormalMap();
         #pragma endregion
 
         #pragma region Cubemaps
@@ -128,7 +128,7 @@ namespace EisEngine {
 
         #pragma region Materials
         /// \n Loads a material from the provided assimp material object.
-        static Material* LoadMaterial(const aiMaterial* mat);
+        static shared_ptr<Material> LoadMaterial(const aiMaterial* mat);
         #pragma endregion
 
         #pragma region Shaders

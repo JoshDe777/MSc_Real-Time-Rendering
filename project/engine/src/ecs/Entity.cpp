@@ -8,6 +8,10 @@ namespace EisEngine::ecs{
                    componentManager(componentManager), user_data(userData) {
         if(m_id < 0)
             DEBUG_WARN("<Entity::Entity> Invalid Entity ID")
-        transform = static_cast<shared_ptr<Transform>>(&AddComponent<Transform>());
+        transform = AddComponent<Transform>();
+    }
+
+    Entity::~Entity() {
+
     }
 }

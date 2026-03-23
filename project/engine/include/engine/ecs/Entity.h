@@ -13,6 +13,8 @@ namespace EisEngine::ecs {
         friend class EntityManager;
         using Transform = EisEngine::components::Transform;
     public:
+        ~Entity();
+
         /// \n Gets the entity's unique ID.
         [[nodiscard]] guid_t guid() const { return m_id; }
 
@@ -34,7 +36,7 @@ namespace EisEngine::ecs {
         /// \n Adds a component of the given type to an entity.
         /// @return @a Component& - a reference to the newly instantiated Component.
         template<typename C, typename ...Args>
-        C &AddComponent(Args ...args) { return componentManager.addComponent<C>(m_id, args...);}
+        C *AddComponent(Args ...args) { return componentManager.addComponent<C>(m_id, args...);}
 
         /// \n Gets a component from this entity.
         /// @return Component* - a pointer to the retrieved Component.
@@ -60,7 +62,7 @@ namespace EisEngine::ecs {
         }
 
         /// \n a pointer to the transform assigned to an entity.
-        shared_ptr<Transform> transform = nullptr;
+        Transform* transform = nullptr;
         /// \n A void pointer allowing for users to bridge between their systems and an EisEngine entity.
         void* user_data = nullptr;
 
@@ -79,9 +81,8 @@ namespace EisEngine::ecs {
 
         /// \n Cleanses all components assigned to this entity.
         void deleteAllComponents() {
-            for(auto component : componentManager.getEachComponentOfEntity(m_id))
-                component->Invalidate();
-            componentManager.removeComponents(m_id);}
+            componentManager.removeComponents(m_id);
+        }
 
         /// \n the unique ID of this entity.
         guid_t m_id = invalidID;

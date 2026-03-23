@@ -25,7 +25,7 @@ namespace EisEngine::systems {
     nearClip(cameraMode == PERSPECTIVE ? 0.1f : -1),
     farClip(100)
     {
-        entity = static_cast<shared_ptr<Entity>>(&engine.entityManager->createEntity("Camera"));
+        entity = engine.entityManager->createEntity("Camera");
         transform = entity->transform;
         engine.onUpdate.addListener([&] (Game &game){
             // save old known window dimensions.
@@ -92,5 +92,9 @@ namespace EisEngine::systems {
                                   farClip);
         }
         return glm::mat4(1.0f);
+    }
+
+    Camera::~Camera(){
+        //DEBUG_INFO("DELETING CAMERA!!!!!")
     }
 }

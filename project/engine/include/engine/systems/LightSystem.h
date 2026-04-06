@@ -48,8 +48,6 @@ namespace EisEngine {
             std::unordered_map<Vector3, std::vector<int>, GridCoordHashMap> LightGrid = {};
             std::unordered_map<int, Vector3> entityGridPos = {};
 
-            /// \n Collects all Point Lights in the scene and compiles them to a usable grid.
-            void BuildLightGrid();
             /// Find the voxel a given entity is in.\n
             /// Returns (NaN, NaN, NaN) if the entity is not in the grid, please check against it!
             /// -> std::isnan(result.x) == True if invalid.

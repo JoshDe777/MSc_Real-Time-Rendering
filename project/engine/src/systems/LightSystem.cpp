@@ -60,16 +60,6 @@ namespace EisEngine::systems {
         entityGridPos.erase(it);
     }
 
-    void LightSystem::BuildLightGrid() {
-        LightGrid.clear();
-
-        if(engine.componentManager->hasComponentOfType<PointLight>()){
-            engine.componentManager->forEachComponent<PointLight>([&](PointLight& light){
-                InsertEntityAt(light.GetOwner(), light.position());
-            });
-        }
-    }
-
     std::vector<int> LightSystem::QueryNearbyLights(const glm::vec3& objectPos) {
         Vector3 c = WorldToCell(objectPos);
 
@@ -118,14 +108,14 @@ namespace EisEngine::systems {
 
             // ignore entity if not attached to a point light.
             if (entity->GetComponent<PointLight>() == nullptr)
-                return;
+                continue;
 
             auto oldPos = FindEntityVoxel(owner);
             auto newPos = entity->transform->GetGlobalPosition();
 
             // no updates if position didn't change (rotation change also marks as dirty).
             if(oldPos == newPos)
-                return;
+                continue;
 
             RemoveEntityFromGrid(owner);
             InsertEntityAt(owner, newPos);

@@ -15,6 +15,7 @@ namespace Maze {
         Entity* shoulderR = nullptr;
         Entity* hipL = nullptr;
         Entity* hipR = nullptr;
+        Entity* dynamic_light = nullptr;
 
         float animSpeed = 5;
         float stride = 25.0f;

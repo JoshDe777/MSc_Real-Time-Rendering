@@ -491,10 +491,6 @@ namespace EisEngine::systems {
 #pragma endregion
 
     void RenderingSystem::Draw() {
-        // instruct light grid establishment if not built (remove for dynamic SDS
-        if(lightSystem->LightGrid.empty())
-            lightSystem->BuildLightGrid();
-
         // re-enable depth testing for 'regular' entities. (just in case)
         glEnable(GL_DEPTH_TEST);
         // shader / VAO counter

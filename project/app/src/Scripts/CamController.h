@@ -18,7 +18,7 @@ namespace Maze {
         bool isPerspective = true;
         bool freeRoam = true;
 
-        float movementSpeed = 0.0675f;
+        float movementSpeed = 0.25;
         float flyModifier = 20;
         float rotationSpeed = 50;
         float maxRotationDeg = 360;

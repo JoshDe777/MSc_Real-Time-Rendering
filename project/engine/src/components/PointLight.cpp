@@ -30,9 +30,6 @@ namespace EisEngine::components {
         loc.str("");
         loc << "lights[" << index << "].I";
         shader.setFloat(loc.str().c_str(), GetIntensity());
-
-        if(entity()->name() == "Dynamic light")
-            DEBUG_LOG("Applied dynamic light!")
     }
 
     Vector3 PointLight::position() const {

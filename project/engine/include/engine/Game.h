@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+
 #include "engine/Utilities.h"
 #include "engine/Systems.h"
 #include "engine/Context.h"
@@ -77,6 +78,8 @@ namespace EisEngine {
         unique_ptr<PhysicsSystem> physics;
         /// \n The system synchronizing transforms and rigidbodies.
         unique_ptr<PhysicsUpdater> physicsUpdater;
+        /// \n A system used to update light positions
+        unique_ptr<LightSystem> lightSystem;
     protected:
         /// \n Utility function called every frame.
         virtual void update(GLFWwindow *window);

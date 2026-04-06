@@ -17,6 +17,8 @@ namespace EisEngine{
         class Event;
     }
     namespace systems {
+        class LightSystem;
+
         using namespace rendering;
         /// \n The system drawing objects onto the display.
         class RenderingSystem : public System {

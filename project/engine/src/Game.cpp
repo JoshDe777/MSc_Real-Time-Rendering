@@ -12,6 +12,7 @@ namespace EisEngine {
         componentManager = make_unique<ComponentManager>(*this);
         entityManager = make_unique<EntityManager>(*componentManager, *this);
         camera = make_unique<Camera>(*this, context->GetWindowSize());
+        lightSystem = make_unique<LightSystem>(*this);
         renderingSystem = make_unique<RenderingSystem>(*this);
         sceneGraphPruner = make_unique<SceneGraphPruner>(*this);
         sceneGraphUpdater = make_unique<SceneGraphUpdater>(*this);
@@ -61,6 +62,7 @@ namespace EisEngine {
         sceneGraphUpdater.reset();
         sceneGraphPruner.reset();
         renderingSystem.reset();
+        lightSystem.reset();
         camera.reset();
         entityManager.reset();
         componentManager.reset();

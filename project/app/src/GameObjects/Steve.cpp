@@ -76,6 +76,13 @@ namespace Maze {
         game.onUpdate.addListener([&](Game& game){
             Animate();
         });
+
+        auto dynamic_light = game.entityManager->createEntity("Dynamic Light");
+        dynamic_light->transform->SetParent(entity->transform);
+        //dynamic_light->transform->SetLocalPosition(Vector3(0, 0, 0));
+        auto lightMat = ResourceManager::CreateMaterialInstance("default");
+        lightMat->SetEmission(Vector3(1, 1, 1));
+        lightMat->SetIntensity(100.0f);
     }
 
     void Steve::Animate() {

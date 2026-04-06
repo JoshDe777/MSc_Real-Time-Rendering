@@ -4,6 +4,7 @@
 #include "engine/systems/SceneGraphUpdater.h"
 
 #include "engine/systems/RenderingSystem.h"
+#include "engine/systems/LightSystem.h"
 
 #include "engine/systems/PhysicsSystem.h"
 #include "engine/systems/PhysicsUpdater.h"
@@ -17,6 +18,7 @@ using SceneGraphPruner = EisEngine::systems::SceneGraphPruner;
 using SceneGraphUpdater = EisEngine::systems::SceneGraphUpdater;
 
 using RenderingSystem = EisEngine::systems::RenderingSystem;
+using LightSystem = EisEngine::systems::LightSystem;
 
 using PhysicsSystem = EisEngine::systems::PhysicsSystem;
 using PhysicsUpdater = EisEngine::systems::PhysicsUpdater;

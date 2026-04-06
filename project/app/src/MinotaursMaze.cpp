@@ -12,6 +12,8 @@ MinotaursMaze::MinotaursMaze() : Game("Minotaur's Maze") {
 
     RenderingSystem::MarkAsLoader(minotaur->entity);
     RenderingSystem::MarkAsLoader(steve->entity);
+
+    onAfterUpdate.addListener([&] (Game& game) { DisplayUI();});
 }
 
 void MinotaursMaze::DisplayUI() {

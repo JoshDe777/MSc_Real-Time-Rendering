@@ -5,6 +5,9 @@
 #include "engine/Game.h"
 #include "engine/components/BoxCollider2D.h"
 
+#include "engine/components/PointLight.h"
+#include "engine/systems/LightSystem.h"
+
 namespace EisEngine::components{
 // helper functions:
 
@@ -250,6 +253,11 @@ namespace EisEngine::components{
 
     void Transform::MarkDirty() {
         dirty = true;
+
+        // flag as dirty to light system if attached to a light source.
+        if(entity()->GetComponent<PointLight>() != nullptr)
+            LightSystem::MarkLightForUpdate(owner);
+
         if(children.empty())
             return;
 

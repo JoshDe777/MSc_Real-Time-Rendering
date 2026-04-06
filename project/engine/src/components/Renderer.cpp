@@ -5,10 +5,10 @@
 namespace EisEngine::components {
     Renderer::Renderer(EisEngine::Game &engine,
                        EisEngine::ecs::guid_t owner,
-                       const shared_ptr<EisEngine::Texture2D>& diffTex,
-                       const shared_ptr<EisEngine::Material>& mat,
+                       EisEngine::Texture2D* diffTex,
+                       EisEngine::Material* mat,
                        std::string layer,
-                       const shared_ptr<Texture2D>& normMap) :
+                       Texture2D* normMap) :
             Component(engine, owner),
             diffuseTexture(diffTex),
             material(mat),
@@ -17,7 +17,7 @@ namespace EisEngine::components {
         if(!diffTex)
             diffuseTexture = ResourceManager::GetTexture("default");
         if(!mat)
-            material = ResourceManager::GetMaterialInstance("default");
+            material = ResourceManager::CreateMaterialInstance("default");
         if(!normMap)
             normalMap = ResourceManager::GetTexture("default_normal");
     }
@@ -51,12 +51,5 @@ namespace EisEngine::components {
                 DEBUG_INFO(entity()->name() + " normal map applied.")
             }
         }
-    }
-
-    void Renderer::Invalidate() {
-        diffuseTexture.reset();
-        normalMap.reset();
-        material.reset();
-        Component::Invalidate();
     }
 }

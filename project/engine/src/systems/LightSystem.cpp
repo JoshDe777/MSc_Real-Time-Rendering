@@ -1,19 +1,24 @@
 #include "engine/systems/LightSystem.h"
+#include "engine/components/PointLight.h"
 #include "engine/Game.h"
 
-namespace EisEngine::systems {
-#pragma region non-class utilities:
-    // dimensions of 3D grid cells - CELL_SIZE^3
-    constexpr float CELL_SIZE = 10.0f;
+#include <limits>
+#include <cmath>
 
+namespace EisEngine::systems {
+    using PointLight = EisEngine::components::PointLight;
+
+#pragma region non-class utilities:
     inline Vector3 WorldToCell(const glm::vec3& pos) {
         return Vector3{
-                floor(pos.x / CELL_SIZE),
-                floor(pos.y / CELL_SIZE),
-                floor(pos.z / CELL_SIZE)
+                floor(pos.x / LightSystem::CELL_SIZE),
+                floor(pos.y / LightSystem::CELL_SIZE),
+                floor(pos.z / LightSystem::CELL_SIZE)
         };
     }
 #pragma endregion
+
+    std::vector<unsigned int> LightSystem::lightsToUpdate = {};
 
     LightSystem::LightSystem(EisEngine::Game &engine) : System(engine) {
         // on before draw -> update light reference (dynamic 3D SDS)
@@ -24,7 +29,11 @@ namespace EisEngine::systems {
 
 #pragma region light grid handling
 
-    void LightSystem::InsertEntityAt(const int &entityID, const EisEngine::systems::Vector3 &pos) {
+    void LightSystem::MarkLightForUpdate(const int &entityID) {
+        lightsToUpdate.push_back(entityID);
+    }
+
+    void LightSystem::InsertEntityAt(const int &entityID, const Vector3 &pos) {
         // remove entity from grid if exists already
         auto it = entityGridPos.find(entityID);
         if(it != entityGridPos.end())
@@ -88,7 +97,8 @@ namespace EisEngine::systems {
         auto it = entityGridPos.find(entityID);
         if (it == entityGridPos.end()){
             DEBUG_ERROR("Couldn't resolve entity " + std::to_string(entityID) + " in light grid")
-            return Vector3::zero;
+            auto NaN = std::numeric_limits<float>::quiet_NaN();
+            return Vector3(NaN, NaN, NaN);
         }
 
         return it->second;
@@ -96,6 +106,32 @@ namespace EisEngine::systems {
 #pragma endregion
 
     void LightSystem::UpdateLightGrid() {
-        DEBUG_INFO("[LightSystem::UpdateLightGrid()] Not yet implemented :I")
+        // no update if no light in scene or no light to update.
+        if (!engine.componentManager->hasComponentOfType<PointLight>() || lightsToUpdate.empty())
+            return;
+
+        // technically means the light will always be a frame forward on transform
+        // -> transforms (model matrices) synced before logic update, this is called after logic update.
+        // update still works since GetGlobalPosition doesn't reference transform's model matrix
+        for(auto owner : lightsToUpdate){
+            auto entity = engine.entityManager->getEntity(owner);
+
+            // ignore entity if not attached to a point light.
+            if (entity->GetComponent<PointLight>() == nullptr)
+                return;
+
+            auto oldPos = FindEntityVoxel(owner);
+            auto newPos = entity->transform->GetGlobalPosition();
+
+            // no updates if position didn't change (rotation change also marks as dirty).
+            if(oldPos == newPos)
+                return;
+
+            RemoveEntityFromGrid(owner);
+            InsertEntityAt(owner, newPos);
+        }
+
+        // reset updates list.
+        lightsToUpdate.clear();
     }
 }

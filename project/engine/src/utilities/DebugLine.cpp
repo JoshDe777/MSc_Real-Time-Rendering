@@ -14,7 +14,7 @@ namespace EisEngine {
         transform = entity->transform;
         transform->SetLocalScale(Vector3::one);
         shared_ptr<Material> lineMat = make_shared<Material>(Vector3(color.r, color.g, color.b));
-        entity->AddComponent<Renderer>(nullptr, lineMat);
+        entity->AddComponent<Renderer>(nullptr, lineMat.get());
         entity->AddComponent<Line>(startPoint, endPoint);
     }
 

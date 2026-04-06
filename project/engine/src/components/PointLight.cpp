@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "engine/Game.h"
 #include "engine/components/PointLight.h"
 
 #include "engine/ecs/Entity.h"
@@ -9,9 +10,11 @@
 namespace EisEngine::components {
     PointLight::PointLight(
             Game& game, guid_t owner,
-            shared_ptr<Material> mat
-    ) : Component(game, owner), mat(std::move(mat)) { }
-    PointLight::PointLight(EisEngine::components::PointLight &&other) noexcept : Component(other) {
+            Material* mat
+    ) : Component(game, owner), mat(mat), engine(game) {
+        game.lightSystem->InsertEntityAt(owner, entity()->transform->GetGlobalPosition());
+    }
+    PointLight::PointLight(EisEngine::components::PointLight &&other) noexcept : Component(other), engine(other.engine) {
         owner = other.owner;
         std::swap(this->mat, other.mat);
     }
@@ -27,9 +30,17 @@ namespace EisEngine::components {
         loc.str("");
         loc << "lights[" << index << "].I";
         shader.setFloat(loc.str().c_str(), GetIntensity());
+
+        if(entity()->name() == "Dynamic light")
+            DEBUG_LOG("Applied dynamic light!")
     }
 
     Vector3 PointLight::position() const {
         return entity()->transform->GetGlobalPosition();
+    }
+
+    void PointLight::Invalidate() {
+        engine.lightSystem->RemoveEntityFromGrid(owner);
+        Component::Invalidate();
     }
 }

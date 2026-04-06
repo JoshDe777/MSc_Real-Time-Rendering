@@ -16,7 +16,7 @@ namespace EisEngine{
         public:
             explicit PointLight (
                     Game& game, guid_t owner,
-                    shared_ptr<Material> mat
+                    Material* mat
             );
             PointLight(const PointLight &light) = delete;
             PointLight(PointLight &&other) noexcept;
@@ -29,8 +29,11 @@ namespace EisEngine{
 
             void SetEmission(const Vector3& v) { mat->SetEmission(v);}
             void SetIntensity(const float& I) { mat->SetIntensity(I);}
+        protected:
+            virtual void Invalidate() override;
         private:
-            shared_ptr<Material> mat;
+            Material* mat;
+            Game& engine;
         };
     }
 }

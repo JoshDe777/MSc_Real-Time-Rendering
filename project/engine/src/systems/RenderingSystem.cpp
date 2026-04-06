@@ -1,12 +1,13 @@
 #include "engine/systems/RenderingSystem.h"
+#include "engine/systems/LightSystem.h"
 #include "engine/Game.h"
 #include "engine/Components.h"
 
 #include <algorithm>
 
 // DO NOT UPDATE WITHOUT ALSO UPDATING SAME NAMED MACRO IN FRAGMENT SHADERS!
-#define MAX_LIGHTS 1
-#define DIST_THRESHOLD 5.0f
+#define MAX_LIGHTS 5
+#define DIST_THRESHOLD 10.0f
 
 namespace EisEngine::systems {
 
@@ -63,6 +64,8 @@ namespace EisEngine::systems {
         camera = engine.camera.get();
         if(!camera)
             DEBUG_RUNTIME_ERROR("Cannot initialize rendering; Camera not found.")
+
+        lightSystem = engine.lightSystem.get();
 
         engine.onUpdate.addListener([&] (Game& engine){ Draw();});
         #pragma endregion

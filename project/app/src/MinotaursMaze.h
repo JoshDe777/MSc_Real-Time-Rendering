@@ -15,7 +15,7 @@ class MinotaursMaze : public Game {
 public:
     explicit MinotaursMaze();
 private:
-    void DisplayUI();
+    static void DisplayUI();
 
     shared_ptr<Steve> steve = nullptr;
     shared_ptr<CamController> controller = nullptr;

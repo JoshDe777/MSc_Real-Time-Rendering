@@ -2,7 +2,6 @@
 
 #include "engine/ecs/system.h"
 #include "engine/utilities/Vector3.h"
-#include "engine/components/PointLight.h"
 
 #include <vector>
 #include <unordered_map>
@@ -11,8 +10,6 @@ namespace EisEngine {
     class Game;
 
     namespace systems {
-        using Vector3 = EisEngine::Vector3;
-        using PointLight = EisEngine::components::PointLight;
         class RenderingSystem;
 
         struct GridCoordHashMap {
@@ -35,10 +32,8 @@ namespace EisEngine {
             /// \n Checks the surroundings of an object for effecting light sources.
             std::vector<int> QueryNearbyLights(const glm::vec3 &objectPos);
 
-        private:
-            /// \n A reference of Point Lights by approximate position in world 3D (x, y, z) space.
-            std::unordered_map<Vector3, std::vector<int>, GridCoordHashMap> LightGrid = {};
-            std::unordered_map<int, Vector3> entityGridPos = {};
+            /// \n Signals to the light system that an emitting entity has changed position.
+            static void MarkLightForUpdate(const int& entityID);
 
             /// \n Registers a light source at the given world position.\n
             /// If said light source is already in the grid, it's old reference is removed.
@@ -46,13 +41,24 @@ namespace EisEngine {
             /// \n Deregisters a light source from the light grid.
             void RemoveEntityFromGrid(const int& entityID);
 
+            static constexpr float CELL_SIZE = 5.0f;
+
+        private:
+            /// \n A reference of Point Lights by approximate position in world 3D (x, y, z) space.
+            std::unordered_map<Vector3, std::vector<int>, GridCoordHashMap> LightGrid = {};
+            std::unordered_map<int, Vector3> entityGridPos = {};
+
             /// \n Collects all Point Lights in the scene and compiles them to a usable grid.
             void BuildLightGrid();
-            /// Find the voxel a given entity is in.
+            /// Find the voxel a given entity is in.\n
+            /// Returns (NaN, NaN, NaN) if the entity is not in the grid, please check against it!
+            /// -> std::isnan(result.x) == True if invalid.
             Vector3 FindEntityVoxel(const int& entityID);
 
             /// \n Updates any light sources that have moved since the last frame.
             void UpdateLightGrid();
+
+            static std::vector<unsigned int> lightsToUpdate;
         };
     }
 }

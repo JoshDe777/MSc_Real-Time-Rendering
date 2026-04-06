@@ -22,10 +22,10 @@ namespace EisEngine {
             /// @param layer - std::string: The rendering layer for meshes paired with a renderer.
             /// \n Currently supported: {"UI" for UI Elements, and [any other string] for regular rendering}.
             Renderer(Game &engine, guid_t owner,
-                     const shared_ptr<Texture2D>& diffTex = nullptr,
-                     const shared_ptr<Material>& mat = nullptr,
+                     Texture2D* diffTex = nullptr,
+                     Material* mat = nullptr,
                      std::string  layer = "Background",
-                     const shared_ptr<Texture2D>& normMap = nullptr);
+                     Texture2D* normMap = nullptr);
             Renderer(const Renderer &renderer) = delete;
             Renderer(Renderer &&other) noexcept;
 
@@ -35,21 +35,19 @@ namespace EisEngine {
             [[nodiscard]] std::string GetLayer() { return m_layer;}
 
             /// \n Sets a new texture for the corresponding sprite.
-            void SetDiffuseTexture(Texture2D* newTexture) { diffuseTexture = static_cast<shared_ptr<Texture2D>>(newTexture);}
-            void SetNormalMap(Texture2D* newTexture) { normalMap = static_cast<shared_ptr<Texture2D>>(newTexture);}
+            void SetDiffuseTexture(Texture2D* newTexture) { diffuseTexture = newTexture;}
+            void SetNormalMap(Texture2D* newTexture) { normalMap = newTexture;}
             /// \n Returns a pointer to the texture assigned to a renderer.
-            Texture2D* GetDiffuseTexture() { return diffuseTexture.get();}
-            Texture2D* GetNormalMap(){ return normalMap.get();}
+            Texture2D* GetDiffuseTexture() { return diffuseTexture;}
+            Texture2D* GetNormalMap(){ return normalMap;}
 
             /// \n The material attributed to the associated mesh.
-            shared_ptr<Material> material;
+            Material* material;
         protected:
-            /// \n A function called when a component is intentionally deleted.
-            void Invalidate() override;
             /// \n the diffuse/albedo texture attributed to the associated mesh.
-            shared_ptr<Texture2D> diffuseTexture;
+            Texture2D* diffuseTexture;
             /// \n the normal map attributed to the associated mesh.
-            shared_ptr<Texture2D> normalMap;
+            Texture2D* normalMap;
             /// \n The rendering layer of the associated mesh.
             std::string m_layer;
         };

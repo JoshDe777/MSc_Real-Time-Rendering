@@ -124,4 +124,74 @@ namespace EisEngine::systems {
         // reset updates list.
         lightsToUpdate.clear();
     }
+
+#pragma region barnes-hut stuff
+    Vector3 LightCluster::eval(const EisEngine::Vector3 &pos) {
+        // L
+        Vector3 posToLight = representative->position() - pos;
+        // dist
+        float dist = posToLight.magnitude();
+        posToLight = posToLight.normalized();
+        // N
+        // V(iew) -> requires Mesh.GetNormalAt(pos)
+
+        // cos_in = max(N.dot(L), 0.0f);
+
+        // attenuation = cos_in / max(dist*dist, epsilon);
+
+        // brdf = mat->eval(N, posToLight, V);
+
+        // return total_intensity * attenuation * brdf;
+    }
+
+    float LightCluster::getError(const EisEngine::Vector3 &pos, Material *mat) {
+        // get closest point from bounding box to pos
+        // d_min = max(dist(closest - pos), epsilon)
+
+        // square attenuation:
+        // geom = 1.0 / (d_min*d_min)
+
+        // cos = 1 (could bound with normal but cba)
+
+        // maximum value of specular lobe
+        // brdf = mat->get_max_brdf("Blinn-Phong")
+
+        // intensity = total_intensity
+
+        // return intensity * geom * cos * brdf;
+    }
+
+    Vector3 LightSystem::ComputeLightCut(
+            EisEngine::Vector3 &pos,
+            EisEngine::Material *mat,
+            const float &error_threshold
+    ) {
+        Vector3 radiance = Vector3();
+
+        // q = PriorityQueue();
+        // q.push(root, priority=root.getError(pos, mat))
+
+        // while (!q.empty()) {
+            // node, bound = q.pop_max();
+            // if (bound < error_threshold || node->children.size() == 0){
+                // radiance += node->eval(pos)
+                // continue;
+            // }
+            // for(auto child: node->children){
+                // bound = child->getError(pos, mat);
+                // q.push(child, mat);
+            // }
+        // }
+
+        return radiance;
+    }
+
+    void LightSystem::BuildLightHeap() {
+        // build light tree here
+
+        // greedy bottom-up:
+        // next pair = smallest new cluster with metric = diagonal bounding box length;
+        // LightCluster.representative = highest intensity child.
+    }
+#pragma endregion
 }

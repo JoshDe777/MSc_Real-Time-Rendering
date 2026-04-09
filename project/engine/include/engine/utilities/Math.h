@@ -14,6 +14,7 @@ namespace EisEngine {
     public:
         /// \n The iconic pi.
         constexpr static const float PI = 3.14159265358979323846f;
+        constexpr static const float EPSILON = 1e-6f;
 
         /// \n Returns the cos value of the given angle
         /// @param angle - float: the angle in the given angle type.

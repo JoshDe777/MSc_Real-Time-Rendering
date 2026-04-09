@@ -4,18 +4,36 @@
 #include "engine/utilities/Vector3.h"
 #include "engine/utilities/rendering/Material.h"
 
+#include <utility>
 #include <vector>
 #include <unordered_map>
 
 namespace EisEngine {
     class Game;
+    namespace components{
+        class PointLight;
+        class Mesh3D;
+    }
 
     namespace systems {
         class LightCluster{
+            using PointLight = EisEngine::components::PointLight;
+            using Mesh3D = EisEngine::components::Mesh3D;
         public:
+            explicit LightCluster(
+                    PointLight* representative,
+                    const float& intensity,
+                    std::array<float, 6> bounds,
+                    std::vector<std::unique_ptr<LightCluster>> children = {}
+                ) :
+                representative(representative),
+                total_intensity(intensity),
+                bounding_box(bounds),
+                children(std::move(children)) {}
+
             /// \n A tuple of pointers to child clusters. Can be empty.
             /// Children must contain a LightCluster with this->representative == child->representative if not empty.
-            std::vector<LightCluster*> children = {};
+            std::vector<std::unique_ptr<LightCluster>> children = {};
 
             /// \n A pointer to the cluster's representative light source for material data.
             PointLight* representative = nullptr;
@@ -26,7 +44,11 @@ namespace EisEngine {
             /// \n x_min, x_max, y_min, y_max, z_min, z_max for the lights in the box
             std::array<float, 6> bounding_box;
 
-            Vector3 eval(const Vector3& pos);
+            Vector3 eval(
+                const EisEngine::components::Mesh3D& mesh,
+                const Vector3& pos,
+                const Vector3& camPos
+            );
 
             /// \n (Deterministic Barnes-Hut) Determines a cluster's error value.
             float getError(const Vector3& pos, Material* mat);
@@ -74,8 +96,10 @@ namespace EisEngine {
             /// \n (Voxel grid) A reverse-reference of entity IDs to their bounding voxel.
             std::unordered_map<int, Vector3> entityGridPos = {};
 
+            std::unique_ptr<LightCluster> root = nullptr;
+
             /// \n (Deterministic Barnes-Hut) Builds a Barnes-Hut / Lightcut tree
-            void BuildLightHeap();
+            std::unique_ptr<LightCluster> BuildLightHeap();
 
             /// \n (Voxel grid) Find the voxel a given entity is in.\n
             /// Returns (NaN, NaN, NaN) if the entity is not in the grid, please check against it!

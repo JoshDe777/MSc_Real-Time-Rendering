@@ -1,6 +1,7 @@
 #include "engine/systems/LightSystem.h"
 #include "engine/components/PointLight.h"
 #include "engine/Game.h"
+#include "engine/components/meshes/Mesh3D.h"
 
 #include <limits>
 #include <cmath>
@@ -24,6 +25,7 @@ namespace EisEngine::systems {
         // on before draw -> update light reference (dynamic 3D SDS)
         engine.onAfterUpdate.addListener([&](Game& engine){
             UpdateLightGrid();
+            // root = BuildLightHeap();
         });
     }
 
@@ -126,22 +128,31 @@ namespace EisEngine::systems {
     }
 
 #pragma region barnes-hut stuff
-    Vector3 LightCluster::eval(const EisEngine::Vector3 &pos) {
+    Vector3 LightCluster::eval(
+            const EisEngine::components::Mesh3D& mesh,
+            const EisEngine::Vector3 &pos,
+            const EisEngine::Vector3& camPos
+    ) {
         // L
         Vector3 posToLight = representative->position() - pos;
         // dist
         float dist = posToLight.magnitude();
         posToLight = posToLight.normalized();
         // N
+        Vector3 normal = mesh.GetNormalAtRayIntersect(
+            representative->position(), -posToLight
+        );
         // V(iew) -> requires Mesh.GetNormalAt(pos)
+        Vector3 view = (camPos - pos).normalized();
 
-        // cos_in = max(N.dot(L), 0.0f);
+        float cos_in = max(Vector3::DotProduct(normal, posToLight), 0.0f);
 
-        // attenuation = cos_in / max(dist*dist, epsilon);
+        float epsilon = 0.001f;
+        float attenuation = cos_in / max(dist*dist, epsilon);
 
-        // brdf = mat->eval(N, posToLight, V);
+        Vector3 brdf = representative->mat->eval(normal, posToLight, view);
 
-        // return total_intensity * attenuation * brdf;
+        return total_intensity * attenuation * brdf;
     }
 
     float LightCluster::getError(const EisEngine::Vector3 &pos, Material *mat) {
@@ -186,12 +197,52 @@ namespace EisEngine::systems {
         return radiance;
     }
 
-    void LightSystem::BuildLightHeap() {
+    std::unique_ptr<LightCluster> LightSystem::BuildLightHeap() {
         // build light tree here
 
         // greedy bottom-up:
         // next pair = smallest new cluster with metric = diagonal bounding box length;
         // LightCluster.representative = highest intensity child.
+
+        std::vector<std::unique_ptr<LightCluster>> queue = {};
+        engine.componentManager->forEachComponent<PointLight>([&](PointLight& light){
+            auto pos = light.position();
+            // make each light a leaf cluster w/o children
+            queue.emplace_back(
+                    &light,
+                    light.GetIntensity(),
+                    std::array<float, 6>({pos.x, pos.x, pos.y, pos.y, pos.z, pos.z}));
+        });
+
+        // combine clusters until there's only one cluster left.
+        while (queue.size() > 1){
+            // how to make this < O(n^2)?
+            // get 2 clusters in queue with smallest bounding box x+y+z
+            LightCluster* c1 = nullptr;
+            LightCluster* c2 = nullptr;
+
+            std::array<float, 6> newBounds = {
+                std::min(c1->bounding_box[0], c2->bounding_box[0]),
+                max(c1->bounding_box[1], c2->bounding_box[1]),
+                std::min(c1->bounding_box[2], c2->bounding_box[2]),
+                max(c1->bounding_box[3], c2->bounding_box[3]),
+                std::min(c1->bounding_box[4], c2->bounding_box[4]),
+                max(c1->bounding_box[5], c2->bounding_box[5])
+            };
+
+            PointLight* new_representative = c1->total_intensity > c2->total_intensity
+                    ? c1->representative : c2->representative;
+
+            // combine to new LightCluster with both as children; choose representative light by cluster intensity
+            queue.emplace_back(
+                    new_representative,
+                    c1->total_intensity + c2->total_intensity,
+                    newBounds,
+                    new std::vector<LightCluster*>({c1, c2})
+            );
+        }
+
+        return std::move(queue[0]);
     }
 #pragma endregion
 }

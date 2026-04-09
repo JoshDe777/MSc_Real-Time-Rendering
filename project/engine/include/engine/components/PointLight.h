@@ -29,10 +29,11 @@ namespace EisEngine{
 
             void SetEmission(const Vector3& v) { mat->SetEmission(v);}
             void SetIntensity(const float& I) { mat->SetIntensity(I);}
+
+            Material* mat;
         protected:
             virtual void Invalidate() override;
         private:
-            Material* mat;
             Game& engine;
         };
     }

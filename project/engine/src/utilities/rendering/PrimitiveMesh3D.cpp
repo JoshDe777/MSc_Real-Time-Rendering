@@ -1,14 +1,23 @@
+#include <algorithm>
 #include "engine/utilities/rendering/PrimitiveMesh3D.h"
 #include "engine/utilities/Vector2.h"
 #include "engine/utilities/Math.h"
 #include "engine/utilities/Debug.h"
 
 namespace EisEngine::rendering {
+#pragma region helpers
     // converts a std::vector of Vector3's to a std::vector of glm::vec3's.
     inline std::vector<glm::vec3> Vector3ToGlmVector(const std::vector<Vector3>& v){
         std::vector<glm::vec3> result = {};
         for(auto i : v)
             result.emplace_back((glm::vec3) i);
+        return result;
+    }
+
+    inline std::vector<Vector3> GlmVectorToVector3(const std::vector<glm::vec3>& v){
+        std::vector<Vector3> result = {};
+        for(auto i : v)
+            result.emplace_back(i);
         return result;
     }
 
@@ -46,6 +55,9 @@ namespace EisEngine::rendering {
         return result;
     }
 
+#pragma endregion
+
+#pragma region constructors & operators
     PrimitiveMesh3D::PrimitiveMesh3D(
             const std::vector<Vector3> &shapeVertices,
             const std::vector<unsigned int> &shapeIndices,
@@ -59,15 +71,22 @@ namespace EisEngine::rendering {
             nVerts(shapeVertices.size()),
             PrimitiveMesh(shapeVertices, shapeIndices) {
         CalculateTangentVecs();
-        /*DEBUG_LOG("Init Primitive Mesh with " + std::to_string(nVerts) + " vertices, " +
-            std::to_string(indices.size()) + " indices, " +
-            std::to_string(normals.size()) + " normals, " +
-            std::to_string(uvs.size()) + " UVs, " +
-            std::to_string(tangents.size()) + " tangents, and " +
-            std::to_string(bitangents.size()) + " bitangents."
-        )*/
+        primitiveRoot = BuildBVHTree(4);
     }
 
+    PrimitiveMesh3D::PrimitiveMesh3D(EisEngine::rendering::PrimitiveMesh3D &&other) noexcept :
+        vertices(other.vertices),
+        normals(other.normals),
+        uvs(other.uvs),
+        tangents(other.tangents),
+        bitangents(other.bitangents),
+        nVerts(other.nVerts),
+        primitiveRoot(std::move(other.primitiveRoot)),
+        PrimitiveMesh(GlmVectorToVector3(other.vertices), other.indices)
+    { }
+#pragma endregion
+
+#pragma region getters
     void PrimitiveMesh3D::CalculateTangentVecs() {
         std::vector<glm::vec3> tans = {nVerts, glm::vec3(0.0f)};
         std::vector<glm::vec3> bitans = {nVerts, glm::vec3(0.0f)};
@@ -178,6 +197,7 @@ namespace EisEngine::rendering {
             result.emplace_back(i);
         return result;
     }
+#pragma endregion
 
 #pragma region skybox definition
     const std::vector<Vector3> skyboxVertices = {
@@ -213,9 +233,9 @@ namespace EisEngine::rendering {
     };
 #pragma endregion
     // no normals or UVs
-    const PrimitiveMesh3D PrimitiveMesh3D::skybox = PrimitiveMesh3D(
+    const PrimitiveMesh3D PrimitiveMesh3D::skybox() { return PrimitiveMesh3D(
             skyboxVertices, skyboxIndices
-            );
+            );}
 
 #pragma region Cube Definition
     const std::vector<Vector3> cubeVertices = {
@@ -331,8 +351,194 @@ namespace EisEngine::rendering {
     };
 #pragma endregion
 
-    const PrimitiveMesh3D PrimitiveMesh3D::cube = PrimitiveMesh3D(
+    const PrimitiveMesh3D PrimitiveMesh3D::cube() { return PrimitiveMesh3D(
             cubeVertices, cubeIndices,
             &cubeNormals, &cubeUVs
-    );
+    );}
+
+#pragma region mesh traversal stuff
+
+    bool PrimitiveMesh3D::RayIntersectsWithBounds(const EisEngine::Vector3 &raySource,
+                                                  const EisEngine::Vector3 &rayDir,
+                                                  const std::array<float, 6> &bounds,
+                                                  float& t_max) const {
+        auto inverseDir = Vector3(1/rayDir.x, 1/rayDir.y, 1/rayDir.z);
+
+        auto temp1 = Vector3(bounds[0], bounds[2], bounds[4]) - raySource;
+        auto tEntry = Vector3(
+                temp1.x * inverseDir.x,
+                temp1.y * inverseDir.y,
+                temp1.z * inverseDir.z
+        );
+
+        auto temp2 = Vector3(bounds[1], bounds[3], bounds[5]) - raySource;
+        auto tExit = Vector3(
+                temp2.x * inverseDir.x,
+                temp2.y * inverseDir.y,
+                temp2.z * inverseDir.z
+        );
+
+        auto tLatestEntry = max(min(tEntry.x, tExit.x), max(min(tEntry.y, tExit.y), min(tEntry.z, tExit.z)));
+
+        // early exit if there IS a hit but it's further than the closest registered hit (performance)
+        if (tLatestEntry >= t_max)
+            return false;
+
+        auto tEarliestExit = min(max(tEntry.x, tExit.x), min(max(tEntry.y, tExit.y), max(tEntry.z, tExit.z)));
+
+        // max(tLatestEntry, 0.0f) for culling of rays originating behind the mesh
+        return tEarliestExit >= max(tLatestEntry, 0.0f);
+    }
+
+    BVHHitResult
+    PrimitiveMesh3D::RayIntersectsWithTriangle(
+            const EisEngine::Vector3 &raySource,
+            const EisEngine::Vector3 &rayDir,
+            const std::array<unsigned int, 3> &triangle
+    ) const {
+        Vector3 edge1 = Vector3(vertices[triangle[1]] - vertices[triangle[0]]);
+        Vector3 edge2 = Vector3(vertices[triangle[2]] - vertices[triangle[0]]);
+
+        // gets vector orthogonal to the plane formed by the ray and edge 2
+        Vector3 ortho = Vector3::CrossProduct(rayDir, edge2);
+        // gets angle between above and edge 1
+        // -> if close to 0 means rayDir near parallel to plane edge1 edge2
+        float alpha = Vector3::DotProduct(edge1, ortho);
+
+        // no hit if near parallel
+        if(abs(alpha) < Math::EPSILON)
+            return BVHHitResult(false);
+
+        float alphaInverse = 1.0f / alpha;
+        Vector3 sourceToV0 = raySource - Vector3(vertices[triangle[0]]);
+
+        float uCoord = alphaInverse * Vector3::DotProduct(sourceToV0, ortho);
+
+        // if barycentric u not in range [0, 1] -> ray misses this triangle
+        if (uCoord < 0 || uCoord > 1)
+            return BVHHitResult(false);
+
+        auto vCrossE1 = Vector3::CrossProduct(sourceToV0, edge1);
+        float vCoord = alphaInverse * Vector3::DotProduct(rayDir, vCrossE1);
+
+        // if barycentric v not in range [0, 1] -> ray misses this triangle
+        if (vCoord < 0 || vCoord > 1)
+            return BVHHitResult(false);
+
+        float dist = alphaInverse * Vector3::DotProduct(edge2, vCrossE1);
+        if (dist < Math::EPSILON)
+            return BVHHitResult(false);
+
+        return BVHHitResult(true, dist, Vector2(uCoord, vCoord), triangle);
+    }
+
+    BVHHitResult
+    PrimitiveMesh3D::GetBVHHit(
+            const Vector3& raySource,
+            const Vector3& rayDir,
+            BVHNode* node,
+            float& t_max
+    ) const {
+        if (node == nullptr){
+            DEBUG_ERROR("Primitive not equipped for BVH traversal!")
+            return BVHHitResult(false);
+        }
+
+        auto hit = RayIntersectsWithBounds(raySource, rayDir, node->bounds, t_max);
+
+        // early exit if misses the mesh's bounding box entirely
+        if(!hit)
+            return BVHHitResult(false);
+
+        // init dummy no hit result struct in case no hits at all.
+        BVHHitResult closestHit = BVHHitResult(false);
+
+        // end recursion if leaf mesh subdivision
+        if(node->isLeaf()){
+            // calculate ray hit for every triangle in bounds and return closest hit.
+            for (auto i : node->triangles) {
+                hit = RayIntersectsWithTriangle(raySource, rayDir, i);
+                if (hit.hit && hit.dist < t_max) {
+                    closestHit = hit;
+                    t_max = hit.dist;
+                }
+            }
+            return closestHit;
+        }
+
+        auto lHit = GetBVHHit(raySource, rayDir, node->left.get(), t_max);
+        if (lHit.hit) {
+            closestHit = lHit;
+            t_max = lHit.dist;
+        }
+
+        auto rHit = GetBVHHit(raySource, rayDir, node->right.get(), t_max);
+        if (rHit.hit)
+            closestHit = rHit;
+
+        return closestHit;
+    }
+
+    std::unique_ptr<BVHNode> PrimitiveMesh3D::BuildNode(
+            std::vector<std::array<unsigned int, 3>>& triangles,
+            const int& start, const int& end, const int& maxTrianglesPerLeaf
+    ){
+        int middle = (start + end) / 2;
+
+        // build a bounding box around all triangles in node.
+        float minX = 10000000000000, minY = 10000000000000, minZ = 10000000000000;
+        float maxX = -10000000000000, maxY = -10000000000000, maxZ = -10000000000000;
+        for(auto i = start; i < end; i++){
+            glm::vec3 vert0 = vertices[triangles[i][0]];
+            glm::vec3 vert1 = vertices[triangles[i][1]];
+            glm::vec3 vert2 = vertices[triangles[i][2]];
+
+            minX = min(minX, min(vert0.x, min(vert1.x, vert2.x)));
+            minY = min(minY, min(vert0.y, min(vert1.y, vert2.y)));
+            minZ = min(minZ, min(vert0.z, min(vert1.z, vert2.z)));
+
+            maxX = max(maxX, max(vert0.x, max(vert1.x, vert2.x)));
+            maxY = max(maxY, max(vert0.y, max(vert1.y, vert2.y)));
+            maxZ = max(maxZ, max(vert0.z, max(vert1.z, vert2.z)));
+        }
+
+        std::array<float, 6> bounds = {minX, maxX, minY, maxY, minZ, maxZ};
+        auto node = std::make_unique<BVHNode>(bounds);
+
+        if(end - start <= maxTrianglesPerLeaf){
+            node->triangles = std::vector<std::array<unsigned int, 3>>(triangles.begin() + start, triangles.begin() + end);
+            return node;
+        }
+
+        glm::vec3 box_size = {bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4]};
+        auto maxVal = max(box_size.x, max(box_size.y, box_size.z));
+
+        int axis = maxVal == box_size.x ? 0 : maxVal == box_size.y ? 1 : 2;
+
+
+        std::sort(triangles.begin() + start, triangles.begin() + end,
+                  [axis, this](const std::array<unsigned int, 3>& a, const std::array<unsigned int, 3>& b) {
+                      return centroid(a)[axis] < centroid(b)[axis];
+                  });
+
+        node->left = BuildNode(triangles, start, middle, maxTrianglesPerLeaf);
+        node->right = BuildNode(triangles, middle, end, maxTrianglesPerLeaf);
+
+        return node;
+    }
+
+    std::array<float, 3> PrimitiveMesh3D::centroid(const std::array<unsigned int, 3> &a) {
+        // arithmetic average of all vertices in a triangle.
+        auto centroid = 0.33333f * (vertices[a[0]] + vertices[a[1]] + vertices[a[2]]);
+        return {centroid.x, centroid.y, centroid.z};
+    }
+
+    std::unique_ptr<BVHNode> PrimitiveMesh3D::BuildBVHTree(const int &maxTrianglesPerLeaf) {
+        std::vector<std::array<unsigned int, 3>> triangles = {};
+        for(int i = 0; i < indices.size(); i += 3)
+            triangles.emplace_back(std::array<unsigned int, 3>{indices[i], indices[i+1], indices[i+2]});
+
+        return BuildNode(triangles, 0, (int) triangles.size(), maxTrianglesPerLeaf);
+    }
+#pragma endregion
 }

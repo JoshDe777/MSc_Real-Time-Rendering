@@ -69,6 +69,8 @@ namespace EisEngine {
         void SetTiling(const float& val){tiling = val;}
         void SetIntensity(const float& val) {intensity = val;}
         #pragma endregion
+
+        Vector3 eval(const Vector3& normal, const Vector3& dirToLight, const Vector3& view);
     private:
         Vector3 diffuse;
         Vector3 emission;

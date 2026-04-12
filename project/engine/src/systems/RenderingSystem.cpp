@@ -1,5 +1,4 @@
 #include "engine/systems/RenderingSystem.h"
-#include "engine/systems/LightSystem.h"
 #include "engine/Game.h"
 #include "engine/Components.h"
 
@@ -8,6 +7,10 @@
 // DO NOT UPDATE WITHOUT ALSO UPDATING SAME NAMED MACRO IN FRAGMENT SHADERS!
 #define MAX_LIGHTS 5
 #define DIST_THRESHOLD 10.0f
+
+// tuned by hand with some trial and error.
+const float BASE_CUT_THRESHOLD = 0.1f;
+const float CUT_FALLOFF_RATE = 0.001f;
 
 namespace EisEngine::systems {
 
@@ -20,6 +23,8 @@ namespace EisEngine::systems {
     Vector3 RenderingSystem::eta = Vector3::zero;
     // 15% ambiant lighting
     float RenderingSystem::ambient = 0.15f;
+
+    bool RenderingSystem::useVoxelGrid = false;
 #pragma endregion
 
 #pragma region shader definitions
@@ -87,6 +92,12 @@ namespace EisEngine::systems {
         glfwSetWindowSizeCallback(engine.getWindow(), [](GLFWwindow* window, int width, int height){
             RenderingSystem::onResize.invoke(Vector2((float) width, (float) height));
         });
+
+        // init SSBO
+        glGenBuffers(1, &lightCutSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightCutSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         #pragma endregion
 
         #pragma region shader program creation
@@ -262,6 +273,140 @@ namespace EisEngine::systems {
 #pragma endregion
 
 #pragma region drawing process
+
+    void RenderingSystem::GetGridLights(EisEngine::systems::RenderingSystem::Mesh3D &mesh,
+                                        EisEngine::rendering::Shader *activeShader) {
+        auto pos = mesh.entity()->transform->GetGlobalPosition();
+        float lodDist = 100000000000000000.0f;
+        // base LOD --> if within distance of loader object, render normally else render ambiant
+        if(!Loaders.empty())
+            for(auto obj : Loaders){
+                auto objPos = obj->transform->GetGlobalPosition();
+                //objPos.y = 2;
+                lodDist = std::min(lodDist, Vector3::Distance(objPos, pos));
+            }
+
+        // if dist to any LOD object < dist threshold
+        // compute lighting
+        if(lodDist > DIST_THRESHOLD) {
+            // implicit LOD culling by setting no lights --> ambiant
+            // better than outright branching in the GPU
+            activeShader->setInt("nLights", 0);
+            return;
+        }
+
+        // get lights in grid
+        auto results = lightSystem->QueryNearbyLights(pos);
+        std::vector<LightEntry> list;
+        list.reserve(results.size());
+
+        // for each entry in the results, create an LightEntry object
+        for (int id : results) {
+            auto* e = engine.entityManager->getEntity(id);
+            if (!e) continue;
+
+            auto* L = e->GetComponent<PointLight>();
+            if (!L) continue;
+
+            float d2 = Vector3::Distance(L->position(), pos);
+            list.push_back({L, d2});
+        }
+
+        // sort entries by distance
+        std::sort(list.begin(), list.end(),
+                  [](auto& a, auto& b){
+                      return a.dist2 < b.dist2;
+                  });
+
+        // resize list to acceptable size -> keeps the m closest lights.
+        if (list.size() > MAX_LIGHTS)
+            list.resize(MAX_LIGHTS);
+
+        std::vector<ShaderLightStruct> entries = {};
+        for(auto light : list){
+            auto source = light.L;
+            entries.push_back({
+                source->position(),
+                0,
+                source->GetEmission(),
+                source->GetIntensity()
+            });
+        }
+
+        // unwrap
+        ApplyLightEntriesToShader(entries, activeShader);
+    }
+
+    float thresholdFunc(float& LODDist){
+        auto dist = max(LODDist, Math::EPSILON);
+        auto dFactor = (float) pow(dist, 2);
+        // lowers the threshold when closer to the loaders, and increases quadratically
+        // as the distance does too.
+        return (BASE_CUT_THRESHOLD * dFactor) / (1 + CUT_FALLOFF_RATE * dFactor);
+    }
+
+    void RenderingSystem::ApplyLightEntriesToShader(std::vector<ShaderLightStruct>& entries, Shader* activeShader) const{
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightCutSSBO);
+
+        size_t newSize = entries.size() * sizeof(LightEntry);
+        // clear & resize buffer to fit
+        glBufferData(
+                GL_SHADER_STORAGE_BUFFER,
+                (GLsizeiptr) newSize,
+                nullptr,
+                GL_DYNAMIC_DRAW
+        );
+
+        // apply data & bind to base location 0.
+        glBufferSubData(
+                GL_SHADER_STORAGE_BUFFER,
+                0,
+                (GLsizeiptr) newSize,
+                entries.data()
+                );
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightCutSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        activeShader->setInt("nLights", (int) entries.size());
+    }
+
+    void RenderingSystem::GetLightClusters(EisEngine::systems::RenderingSystem::Mesh3D &mesh,
+                                           EisEngine::rendering::Shader *activeShader) {
+        // get LOD level -> dist to player
+        // (maybe logistic function where the closer to a loader, the lower the error threshold?)
+        auto pos = mesh.entity()->transform->GetGlobalPosition();
+        float lodDist = 100000000000000000.0f;
+        // base LOD --> if within distance of loader object, render normally else render ambiant
+        if(!Loaders.empty())
+            for(auto obj : Loaders){
+                auto objPos = obj->transform->GetGlobalPosition();
+                //objPos.y = 2;
+                lodDist = std::min(lodDist, Vector3::Distance(objPos, pos));
+            }
+
+        auto threshold = thresholdFunc(lodDist);
+
+        // calculate light cuts based on LOD level & activate cuts.
+        auto results = lightSystem->ComputeLightCut(pos, threshold);
+        std::vector<ShaderLightStruct> entries = {};
+        entries.reserve(results.size());
+
+        // make structs that mirror the way PointLights are applied.
+        // 0 serves as padding for the memory buffer (vec3 values expected at start of a 16 byte sequence
+        // but fills 12 bytes -> next vec3 xval essentially discarded if no padding apparently)
+        for(auto cluster: results){
+            entries.push_back({
+                  cluster->representative->position(),
+                  0,
+                  cluster->representative->GetEmission(),
+                  cluster->total_intensity
+          });
+        }
+        // apply light cuts & return.
+        // this automatically applies LOD, should we just ignore it? -> yes
+        ApplyLightEntriesToShader(entries, activeShader);
+    }
+
     void RenderingSystem::Prepare3DDraw(Mesh3D& mesh, Shader* activeShader){
         // could be streamlined? maybe a shader properties object
         // that discards value assignments if don't exist in shader.
@@ -288,56 +433,11 @@ namespace EisEngine::systems {
         if(renderer)
             renderer->ApplyData(*activeShader);
 
-#pragma region lighting calculations
-        auto pos = mesh.entity()->transform->GetGlobalPosition();
-        float lodDist = 100000000000000000.0f;
-        if(!Loaders.empty())
-            for(auto obj : Loaders){
-                auto objPos = obj->transform->GetGlobalPosition();
-                //objPos.y = 2;
-                lodDist = std::min(lodDist, Vector3::Distance(objPos, pos));
-            }
-
-        // if dist to any LOD object < dist threshold
-        // compute lighting
-        if(lodDist < DIST_THRESHOLD){
-            activeShader->setInt("LOD", 1);
-
-            // get lights in grid
-            auto results = lightSystem->QueryNearbyLights(pos);
-            std::vector<LightEntry> list;
-            list.reserve(results.size());
-
-            // for each entry in the results, create an LightEntry object
-            for (int id : results) {
-                auto* e = engine.entityManager->getEntity(id);
-                if (!e) continue;
-
-                auto* L = e->GetComponent<PointLight>();
-                if (!L) continue;
-
-                float d2 = Vector3::Distance(L->position(), pos);
-                list.push_back({L, d2});
-            }
-
-            // sort entries by distance
-            std::sort(list.begin(), list.end(),
-                      [](auto& a, auto& b){ return a.dist2 < b.dist2; });
-
-            // resize list to acceptable size
-            if (list.size() > MAX_LIGHTS)
-                list.resize(MAX_LIGHTS);
-
-            // unwrap
-            for (int i = 0; i < list.size(); i++)
-                list[i].L->Apply(*activeShader, i);
-            activeShader->setInt("nLights", (int) list.size());
-        }
-        else{
-            // else default to ambient.
-            activeShader->setInt("LOD", 0);
-        }
-#pragma endregion
+        // togleable switch between old system made 3D-dynamic and new BH system.
+        if(useVoxelGrid)
+            GetGridLights(mesh, activeShader);
+        else
+            GetLightClusters(mesh, activeShader);
 
         activeShader->setInt("n_levels", n_toon_levels);
     }
@@ -607,5 +707,14 @@ namespace EisEngine::systems {
             mesh->draw(activeShader->GetShaderID());
         }
         #pragma endregion
+    }
+
+    float RenderingSystem::GetMaxBRDF(const std::string &brdfFunc) {
+        if(brdfFunc != "Blinn-Phong")
+            return -1.0f;
+
+        // specular lobe in shader = angle ^ (specularFactor) where the max value angle can take is 1
+        // --> 1^n = 1
+        return 1.0f;
     }
 }

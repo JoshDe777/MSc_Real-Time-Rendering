@@ -1,13 +1,17 @@
 #include "engine/systems/LightSystem.h"
-#include "engine/components/PointLight.h"
 #include "engine/Game.h"
+#include "engine/components/PointLight.h"
 #include "engine/components/meshes/Mesh3D.h"
+#include "engine/utilities/Bounds3D.h"
 
 #include <limits>
 #include <cmath>
+#include <queue>
 
 namespace EisEngine::systems {
     using PointLight = EisEngine::components::PointLight;
+    using Mesh3D = EisEngine::components::Mesh3D;
+    using Bounds3D = EisEngine::utilities::Bounds3D;
 
 #pragma region non-class utilities:
     inline Vector3 WorldToCell(const glm::vec3& pos) {
@@ -24,7 +28,7 @@ namespace EisEngine::systems {
     LightSystem::LightSystem(EisEngine::Game &engine) : System(engine) {
         // on before draw -> update light reference (dynamic 3D SDS)
         engine.onAfterUpdate.addListener([&](Game& engine){
-            UpdateLightGrid();
+            UpdateLightSDS();
             // root = BuildLightHeap();
         });
     }
@@ -36,6 +40,20 @@ namespace EisEngine::systems {
     }
 
     void LightSystem::InsertEntityAt(const int &entityID, const Vector3 &pos) {
+        InsertEntityToGrid(entityID, pos);
+        InsertEntityToBHTree(entityID, pos);
+    }
+
+    void LightSystem::RemoveEntity(const int &entityID) {
+        RemoveEntityFromGrid(entityID);
+        auto cluster = entityTreePos.at(entityID);
+        if (cluster != nullptr) {
+            RemoveClusterFromBHTree(cluster);
+            entityTreePos.erase(entityID);
+        }
+    }
+
+    void LightSystem::InsertEntityToGrid(const int &entityID, const EisEngine::Vector3 &pos) {
         // remove entity from grid if exists already
         auto it = entityGridPos.find(entityID);
         if(it != entityGridPos.end())
@@ -97,152 +115,276 @@ namespace EisEngine::systems {
     }
 #pragma endregion
 
-    void LightSystem::UpdateLightGrid() {
-        // no update if no light in scene or no light to update.
-        if (!engine.componentManager->hasComponentOfType<PointLight>() || lightsToUpdate.empty())
+#pragma region dynamic SDS stuff
+
+    void LightSystem::UpdateLightSDS() {
+        // no updates to make if no lights in scene or to update
+        if(!engine.componentManager->hasComponentOfType<PointLight>() || lightsToUpdate.empty())
             return;
+
+        for(auto id : lightsToUpdate){
+            auto entity = engine.entityManager->getEntity((int) id);
+            UpdateInGrid(entity);
+            UpdateInBHTree(entity);
+        }
+
+        lightsToUpdate.clear();
+    }
+
+    void LightSystem::UpdateInGrid(Entity *entity) {
 
         // technically means the light will always be a frame forward on transform
         // -> transforms (model matrices) synced before logic update, this is called after logic update.
         // update still works since GetGlobalPosition doesn't reference transform's model matrix
-        for(auto owner : lightsToUpdate){
-            auto entity = engine.entityManager->getEntity(owner);
+        // ignore entity if not attached to a point light.
+        if (entity->GetComponent<PointLight>() == nullptr)
+            return;
 
-            // ignore entity if not attached to a point light.
-            if (entity->GetComponent<PointLight>() == nullptr)
-                continue;
+        auto owner = entity->guid();
 
-            auto oldPos = FindEntityVoxel(owner);
-            auto newPos = entity->transform->GetGlobalPosition();
+        auto oldPos = FindEntityVoxel(owner);
+        auto newPos = entity->transform->GetGlobalPosition();
 
-            // no updates if position didn't change (rotation change also marks as dirty).
-            if(oldPos == newPos)
-                continue;
+        // no updates if position didn't change (rotation change also marks as dirty).
+        if(oldPos == newPos)
+            return;
 
-            RemoveEntityFromGrid(owner);
-            InsertEntityAt(owner, newPos);
+        RemoveEntityFromGrid(owner);
+        InsertEntityToGrid(owner, newPos);
+    }
+
+    void LightSystem::UpdateInBHTree(EisEngine::systems::LightSystem::Entity *entity) {
+        auto light = entity->GetComponent<PointLight>();
+        if(light == nullptr)
+            return;
+
+        // find light in BHTree
+        auto cluster = entityTreePos.at(entity->guid());
+        // if light is already in the tree
+        if(cluster != nullptr){
+            // if position hasn't changed, return
+            bool pos_changed = light->position() != cluster->bounding_box.Centre();
+            if(!pos_changed)
+                return;
+
+            // otherwise prune it from the tree.
+            RemoveClusterFromBHTree(cluster);
+            entityTreePos.erase(entity->guid());
         }
 
-        // reset updates list.
-        lightsToUpdate.clear();
+        // (re-)insert light source somewhere else.
+        InsertEntityToBHTree(entity->guid(), light->position());
     }
+
+#pragma endregion
 
 #pragma region barnes-hut stuff
-    Vector3 LightCluster::eval(
-            const EisEngine::components::Mesh3D& mesh,
-            const EisEngine::Vector3 &pos,
-            const EisEngine::Vector3& camPos
-    ) {
-        // L
-        Vector3 posToLight = representative->position() - pos;
-        // dist
-        float dist = posToLight.magnitude();
-        posToLight = posToLight.normalized();
-        // N
-        Vector3 normal = mesh.GetNormalAtRayIntersect(
-            representative->position(), -posToLight
-        );
-        // V(iew) -> requires Mesh.GetNormalAt(pos)
-        Vector3 view = (camPos - pos).normalized();
-
-        float cos_in = max(Vector3::DotProduct(normal, posToLight), 0.0f);
-
-        float epsilon = 0.001f;
-        float attenuation = cos_in / max(dist*dist, epsilon);
-
-        Vector3 brdf = representative->mat->eval(normal, posToLight, view);
-
-        return total_intensity * attenuation * brdf;
-    }
-
-    float LightCluster::getError(const EisEngine::Vector3 &pos, Material *mat) {
+    float LightCluster::estimateError(const Vector3 &pos) const {
         // get closest point from bounding box to pos
-        // d_min = max(dist(closest - pos), epsilon)
+        Vector3 closest = bounding_box.GetClosestPointTo(pos);
+        auto d_min = max(Vector3::Distance(closest, pos), Math::EPSILON);
 
-        // square attenuation:
-        // geom = 1.0 / (d_min*d_min)
-
-        // cos = 1 (could bound with normal but cba)
+        // square attenuation 1 / d^2:
+        auto geom = 1.0f / (d_min*d_min);
 
         // maximum value of specular lobe
-        // brdf = mat->get_max_brdf("Blinn-Phong")
+        auto brdf = RenderingSystem::GetMaxBRDF();
 
-        // intensity = total_intensity
-
-        // return intensity * geom * cos * brdf;
+        return total_intensity * geom * brdf;
     }
 
-    Vector3 LightSystem::ComputeLightCut(
+    // custom comparison metric for clusters to ensure priority queues select the cluster with the min cost.
+    auto compareClustersBuild = [](std::pair<LightCluster*, float>& a, std::pair<LightCluster*, float>& b){
+        return a.second > b.second;
+    };
+    // as above but opposite order (building choosing roughest clusters to refine).
+    auto compareClustersRun = [](std::pair<LightCluster*, float>& a, std::pair<LightCluster*, float>& b){
+        return a.second < b.second;
+    };
+
+    std::vector<LightCluster*> LightSystem::ComputeLightCut(
             EisEngine::Vector3 &pos,
-            EisEngine::Material *mat,
             const float &error_threshold
     ) {
-        Vector3 radiance = Vector3();
+        // return an empty list if there are no lights registered.
+        if(root == nullptr)
+            return {};
 
-        // q = PriorityQueue();
-        // q.push(root, priority=root.getError(pos, mat))
+        std::vector<LightCluster*> results = {};
 
-        // while (!q.empty()) {
-            // node, bound = q.pop_max();
-            // if (bound < error_threshold || node->children.size() == 0){
-                // radiance += node->eval(pos)
-                // continue;
-            // }
-            // for(auto child: node->children){
-                // bound = child->getError(pos, mat);
-                // q.push(child, mat);
-            // }
-        // }
+        // custom max-queue with function assessing max error as largest priority.
+        auto q = std::priority_queue<
+                std::pair<LightCluster*, float>,
+                std::vector<std::pair<LightCluster*, float>>,
+                decltype(compareClustersRun)>(compareClustersRun);
+        q.push({root.get(), root->estimateError(pos)});
 
-        return radiance;
-    }
+        // until there is no more cluster to be subdivided.
+        while(!q.empty()){
 
-    std::unique_ptr<LightCluster> LightSystem::BuildLightHeap() {
-        // build light tree here
+            auto r = q.top();
+            q.pop();
 
-        // greedy bottom-up:
-        // next pair = smallest new cluster with metric = diagonal bounding box length;
-        // LightCluster.representative = highest intensity child.
+            auto node = r.first;
+            auto error = r.second;
 
-        std::vector<std::unique_ptr<LightCluster>> queue = {};
-        engine.componentManager->forEachComponent<PointLight>([&](PointLight& light){
-            auto pos = light.position();
-            // make each light a leaf cluster w/o children
-            queue.emplace_back(
-                    &light,
-                    light.GetIntensity(),
-                    std::array<float, 6>({pos.x, pos.x, pos.y, pos.y, pos.z, pos.z}));
-        });
+            // if the cluster's computed error factor is good enough, or we're evaluating the light source itself,
+            // store the node and continue to the next branch.
+            if (error < error_threshold || node->isLeaf()){
+                results.push_back(node);
+                continue;
+            }
 
-        // combine clusters until there's only one cluster left.
-        while (queue.size() > 1){
-            // how to make this < O(n^2)?
-            // get 2 clusters in queue with smallest bounding box x+y+z
-            LightCluster* c1 = nullptr;
-            LightCluster* c2 = nullptr;
+            // otherwise calculate children's errors and add them to the queue.
+            auto lErr = node->left->estimateError(pos);
+            q.push({node->left.get(), lErr});
 
-            std::array<float, 6> newBounds = {
-                std::min(c1->bounding_box[0], c2->bounding_box[0]),
-                max(c1->bounding_box[1], c2->bounding_box[1]),
-                std::min(c1->bounding_box[2], c2->bounding_box[2]),
-                max(c1->bounding_box[3], c2->bounding_box[3]),
-                std::min(c1->bounding_box[4], c2->bounding_box[4]),
-                max(c1->bounding_box[5], c2->bounding_box[5])
-            };
-
-            PointLight* new_representative = c1->total_intensity > c2->total_intensity
-                    ? c1->representative : c2->representative;
-
-            // combine to new LightCluster with both as children; choose representative light by cluster intensity
-            queue.emplace_back(
-                    new_representative,
-                    c1->total_intensity + c2->total_intensity,
-                    newBounds,
-                    new std::vector<LightCluster*>({c1, c2})
-            );
+            auto rErr = node->right->estimateError(pos);
+            q.push({node->right.get(), rErr});
         }
 
-        return std::move(queue[0]);
+        // return list of valid clusters for the light cut.
+        return results;
+    }
+
+    void LightSystem::InsertEntityToBHTree(const int &entityID, const EisEngine::Vector3 &pos) {
+        auto entity = engine.entityManager->getEntity(entityID);
+        auto light = entity->GetComponent<PointLight>();
+
+        auto newCluster = std::make_unique<LightCluster>(
+            light,
+            light->GetIntensity(),
+            Bounds3D(light->position())
+        );
+        // valid assuming nodes don't get deleted.
+        entityTreePos.insert({entityID, newCluster.get()});
+
+        // if no light tree in scene, insert node as only lightcluster
+        if (root == nullptr){
+            root = std::move(newCluster);
+            return;
+        }
+
+        LightCluster* bestSibling = root.get();
+        float bestCost = 100000000000000.0;
+
+        // "custom" min-prio-Q based on lambda function compareClustersBuild (defined above ComputeLightCut)
+        auto q = std::priority_queue<
+                std::pair<LightCluster*, float>,
+                std::vector<std::pair<LightCluster*, float>>,
+                decltype(compareClustersBuild)> (compareClustersBuild);
+        std::pair<LightCluster*, float> pair = {root.get(), 0};
+        q.push(pair);
+
+        while(!q.empty()){
+            auto r = q.top();
+            q.pop();
+            auto node = r.first;
+            auto costToNode = r.second;
+
+            // cost of node = difference in bounding box size
+            auto size = node->bounding_box.diagonalSize();
+            auto potSize = node->bounding_box.Expand(pos).diagonalSize();
+            auto directCost = potSize - size;
+
+            auto totalCost = costToNode + directCost;
+            if (totalCost < bestCost){
+                bestCost = totalCost;
+                bestSibling = node;
+            }
+
+            // pruning of subtrees where inherited cost >= bestCost
+            // (bounds won't get smaller -> not worth looking into)
+            if (costToNode >= bestCost || node->isLeaf())
+                continue;
+
+            q.push({node->left.get(), totalCost});
+            q.push({node->right.get(), totalCost});
+        }
+
+        auto rep = bestSibling->total_intensity > light->GetIntensity() ?
+                   bestSibling->representative :
+                   light;
+
+        // edge case: best sibling is root:
+        if (bestSibling == root.get()){
+            // implant new depth=1 subtree of siblings.
+            auto newRoot = std::make_unique<LightCluster>(
+                rep,
+                bestSibling->total_intensity + light->GetIntensity(),
+                Bounds3D::Merge(bestSibling->bounding_box, newCluster->bounding_box)
+            );
+            newRoot->AddChild(root);
+            newRoot->AddChild(newCluster);
+            root = std::move(newRoot);
+            return;
+        }
+
+        auto oldParent = bestSibling->parent;
+        // checks whether the best sibling is assigned to left or not
+        bool isLeft = oldParent->left.get() == bestSibling;
+
+        std::unique_ptr<LightCluster> sibling_ptr = oldParent->DetachChild(isLeft);
+
+        auto newParentCluster = std::make_unique<LightCluster>(
+            // determine representative light etc here
+            rep,
+            sibling_ptr->total_intensity + light->GetIntensity(),
+            Bounds3D::Merge(sibling_ptr->bounding_box, newCluster->bounding_box)
+        );
+
+        // attach sibling & new node to subtree (order irrelevant since reordered in 2nd AddChild)
+        newParentCluster->AddChild(sibling_ptr);
+        newParentCluster->AddChild(newCluster);
+
+        // reattach subtree to old branch last
+        // -> AddChild does std::move on the unique_ptr passed
+        // update bounding boxes for all clusters above selected.
+        oldParent->AddChild(newParentCluster);
+        oldParent->UpdateBBox();
+    }
+
+    void LightSystem::RemoveClusterFromBHTree(EisEngine::systems::LightCluster *cluster) {
+        auto affectedLight = cluster->representative;
+
+        // edge case: cluster is root:
+        if(cluster == root.get()){
+            // no more lights in scene
+            root = nullptr;
+            return;
+        }
+
+        auto parent = cluster->parent;
+        bool siblingIsLeft = parent->left.get() != cluster;
+
+        // edge case: cluster is child of root
+        if(parent == root.get()){
+            // make sibling root
+            auto sibling = parent->DetachChild(siblingIsLeft);
+            root = std::move(sibling);
+            return;
+        }
+
+        // get family tree
+        auto grandparent = parent->parent;
+        // establish left or right sub-branch by comparing pointer addresses.
+        bool parentIsLeft = grandparent->left.get() == parent;
+
+        // unlink parent from grandparent & sibling from parent
+        auto orphanParent = grandparent->DetachChild(parentIsLeft);
+        auto orphanSibling = parent->DetachChild(siblingIsLeft);
+
+        // attach sibling to grandparent (bounding boxes can only get smaller so works)
+        grandparent->AddChild(orphanSibling);
+        grandparent->UpdateBBox();
+
+        // link sibling to grandparent -> fine because bounding box can only get smaller
+        // if granparent.representative isn't cluster.representative can return safely
+        if (grandparent->representative != affectedLight)
+            return;
+
+        // otherwise rechoose representative & propagate up (ChooseRepresentative() already handles recursion)
+        grandparent->ChooseRepresentative();
     }
 #pragma endregion
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <OpenGL/OpenGlInclude.h>
+#include "engine/systems/LightSystem.h"
 #include "engine/ecs/System.h"
 #include "Camera.h"
 #include "engine/utilities/rendering/Shader.h"
@@ -17,7 +18,15 @@ namespace EisEngine{
         class Event;
     }
     namespace systems {
-        class LightSystem;
+        using LightSystem = EisEngine::systems::LightSystem;
+        using LightCluster = EisEngine::systems::LightCluster;
+
+        struct ShaderLightStruct{
+            glm::vec3 pos;
+            float _padding;
+            glm::vec3 em;
+            float I;
+        };
 
         using namespace rendering;
         /// \n The system drawing objects onto the display.
@@ -47,6 +56,10 @@ namespace EisEngine{
             static void SetAmbientLevel(const float& val) { ambient = val;}
             /// \n sets the level of chromatic aberration. Unused outside of glassy shader.
             static void SetEta(const Vector3& val) { eta = val;}
+
+            static float GetMaxBRDF(const std::string& brdfFunc = "Blinn-Phong");
+
+            static void SetLightMode(bool& _useVoxelGrid) {useVoxelGrid = _useVoxelGrid;}
         private:
             // FBO functions
             /// \n Initializes the framebuffer object for depth mapping.
@@ -63,6 +76,12 @@ namespace EisEngine{
             void DrawSkybox(Shader* activeShader);
             /// \n Prepares shaders to draw a 3D Mesh
             void Prepare3DDraw(Mesh3D& mesh, Shader* activeShader);
+            /// \n Returns a list of light sources retrieved from the voxel entourage.
+            void GetGridLights(Mesh3D& mesh, Shader* activeShader);
+            /// \n Returns a list of light clusters retrieved from the barnes hut approximation.
+            void GetLightClusters(Mesh3D& mesh, Shader* activeShader);
+            /// \n Takes in a list of light cluster results and applies them to the shader.
+            void ApplyLightEntriesToShader(std::vector<ShaderLightStruct>& results, Shader* activeShader) const;
             /// \n Drawing program for all translucent objects.
             void DrawTransparentObjects(std::vector<Mesh3D*>& transparentMeshes,
                                         Shader* activeShader);
@@ -74,6 +93,8 @@ namespace EisEngine{
             std::array<GLuint, 2> FBO;
             /// \n FBO array storing a depth-mapping RBO.
             std::array<GLuint, 2> RBO;
+            /// \n SSBO object used for passing light cluster data to the shader.
+            GLuint lightCutSSBO;
             /// \n Texture index storing depth data.
             std::array<GLuint, 2> depthTex;
             /// \n The name (human-readable) of the default shader for the rendering system.\n
@@ -108,6 +129,8 @@ namespace EisEngine{
             /// Proportion of ambient lighting.\n
             /// ambient = 1 -> fully lit scene.
             static float ambient;
+
+            static bool useVoxelGrid;
         };
     }
 }

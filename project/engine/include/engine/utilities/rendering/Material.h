@@ -43,11 +43,11 @@ namespace EisEngine {
         #pragma region getters
         const Vector3& GetDiffuse() {return diffuse;}
         const Vector3& GetEmission() {return emission;}
-        const float& GetOpacity() const {return opacity;}
-        const float& GetMetallic() const {return metallic;}
-        const float& GetRoughness() const {return roughness;}
-        const float& GetTiling() const {return tiling;}
-        const float& GetIntensity() const {return intensity;}
+        [[nodiscard]] const float& GetOpacity() const {return opacity;}
+        [[nodiscard]] const float& GetMetallic() const {return metallic;}
+        [[nodiscard]] const float& GetRoughness() const {return roughness;}
+        [[nodiscard]] const float& GetTiling() const {return tiling;}
+        [[nodiscard]] const float& GetIntensity() const {return intensity;}
         const std::string& Name() {return name;}
         #pragma endregion
 
@@ -69,8 +69,6 @@ namespace EisEngine {
         void SetTiling(const float& val){tiling = val;}
         void SetIntensity(const float& val) {intensity = val;}
         #pragma endregion
-
-        Vector3 eval(const Vector3& normal, const Vector3& dirToLight, const Vector3& view);
     private:
         Vector3 diffuse;
         Vector3 emission;

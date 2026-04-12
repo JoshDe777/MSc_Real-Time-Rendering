@@ -4,6 +4,7 @@
 
 struct PointLight{
     vec3 pos;
+    float _padding;     // required because of memory reading method according to Claude... (vec3 expected to start 16bit sequence so vec3 usage could read into the next struct)
     vec3 emission;
     float I;
 };
@@ -29,9 +30,10 @@ uniform float specular;
 uniform sampler2D image;
 
 // Lighting-related Input
-uniform PointLight[MAX_LIGHTS] lights;
+layout(std430, binding=0) readonly buffer LightBuffer{
+    PointLight[] lights;
+};
 uniform int nLights;
-uniform int LOD;
 
 // Output(s)
 out vec4 fragColor;
@@ -68,11 +70,6 @@ vec3 calculateFragColor(vec4 base){
 
 void main()
 {
-    if(LOD == 0) {
-        vec4 base_color = ambient * vec4(diffuse.xyz, alpha) * texture(image, TexCoords * tiling);
-        fragColor = vec4(base_color.xyz, alpha);
-        return;
-    }
-
+    // removed LOD since can be done implicitly with nLights == 0 + branching is damaging for performance.
     fragColor = vec4(calculateFragColor(vec4(diffuse, 1.0)).xyz, alpha) * texture(image, TexCoords * tiling);
 }

@@ -53,11 +53,15 @@ namespace EisEngine::components {
         return buffer;
     }
 
-    Mesh3D::Mesh3D(EisEngine::Game &engine, EisEngine::ecs::guid_t owner, std::unique_ptr<PrimitiveMesh3D> _primitive) :
+    Mesh3D::Mesh3D(
+            EisEngine::Game &engine,
+            EisEngine::ecs::guid_t owner,
+            PrimitiveMesh3D& _primitive)
+    :
     Component(engine, owner),
-    primitive(std::move(_primitive)),
-    VBO(CreateVBO(_primitive.get())),
-    EBO(CreateBuffer(GL_ELEMENT_ARRAY_BUFFER, _primitive->indices)) {
+    primitive(std::make_unique<PrimitiveMesh3D>(_primitive)),
+    VBO(CreateVBO(&_primitive)),
+    EBO(CreateBuffer(GL_ELEMENT_ARRAY_BUFFER, _primitive.indices)) {
 
     }
 
@@ -138,40 +142,5 @@ namespace EisEngine::components {
 
         glDrawElements(GL_TRIANGLES, primitive->indexCount, GL_UNSIGNED_INT, nullptr);
         DEBUG_OPENGL(entity()->name())
-    }
-
-    Vector3 Mesh3D::GetNormalAtRayIntersect(
-            const EisEngine::Vector3 &lightPos,
-            const EisEngine::Vector3 &lightDir
-    ) const {
-        // cast ray [delegated to primitive since direct access to mesh data]
-        // returns a hit result struct -> hit: bool, dist = ray distance, uv barycentric coordinates for interpolation,
-        // and the indices of the vertices shaping the closest intersecting triangle.
-
-        // the raycasting logic was in great part ideated in pseudocode by Anthropic's Claude AI,
-        // implemented in C++ by myself from the pseudocode basis.
-        auto t_max = 10000000000.0f;
-        auto hit = primitive->GetBVHHit(
-                lightPos,
-                lightDir,
-                primitive->primitiveRoot.get(),
-                t_max
-        );
-
-        if(!hit.hit) {
-            auto NaN = std::numeric_limits<float>::quiet_NaN();
-            return Vector3(NaN, NaN, NaN);
-        }
-
-        // barycentric coords = vertex weights in interpolation; uv, missing w
-        // need to sum up to 1 so w = 1-u-v
-        auto w = 1.0f - hit.barycentricCoords.x - hit.barycentricCoords.y;
-
-        auto allNormals = primitive->GetNormals();
-        auto n0 = allNormals[hit.triangle[0]];
-        auto n1 = allNormals[hit.triangle[1]];
-        auto n2 = allNormals[hit.triangle[2]];
-
-        return Vector3(n0 * w + n1 * hit.barycentricCoords.x + n2 * hit.barycentricCoords.y).normalized();
     }
 }

@@ -37,7 +37,7 @@ namespace EisEngine::components {
     }
 
     void PointLight::Invalidate() {
-        engine.lightSystem->RemoveEntityFromGrid(owner);
+        engine.lightSystem->RemoveEntity(owner);
         Component::Invalidate();
     }
 }

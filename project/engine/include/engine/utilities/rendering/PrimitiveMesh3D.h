@@ -6,37 +6,6 @@ namespace EisEngine {
     namespace components{ class Mesh3D;}
     namespace rendering {
 
-    struct BVHNode {
-    public:
-        explicit BVHNode(std::array<float, 6> bounds) : bounds(bounds) { }
-
-        bool isLeaf() { return left == nullptr && right == nullptr;}
-
-        std::array<float, 6> bounds;
-        // have direct ownership over child nodes for lifetime.
-        std::unique_ptr<BVHNode> left = nullptr;
-        std::unique_ptr<BVHNode> right = nullptr;
-        std::vector<std::array<unsigned int, 3>> triangles = {};
-    };
-
-    struct BVHHitResult{
-    public:
-        explicit BVHHitResult(
-                bool hitSuccess = true,
-                const float& dist = -1,
-                const Vector2& coords = Vector2::zero,
-                std::array<unsigned int, 3> triangle = {0, 0, 0}):
-                hit(hitSuccess),
-                dist(dist),
-                barycentricCoords(coords),
-                triangle(triangle) { }
-
-        bool hit;
-        float dist;
-        Vector2 barycentricCoords;
-        std::array<unsigned int, 3> triangle;
-    };
-
     struct PrimitiveMesh3D : public PrimitiveMesh {
         friend EisEngine::components::Mesh3D;
     public:
@@ -46,12 +15,11 @@ namespace EisEngine {
                                  const std::vector<Vector2>* shapeUVs = nullptr,
                                  const std::vector<Vector3>* shapeTangents = nullptr,
                                  const std::vector<Vector3>* shapeBitangents = nullptr);
-        PrimitiveMesh3D(PrimitiveMesh3D&& other) noexcept;
 
         /// \n A skybox cube primitive.
-        static const PrimitiveMesh3D skybox();
+        static const PrimitiveMesh3D skybox;
         /// \n A regular cube primitive.
-        static const PrimitiveMesh3D cube();
+        static const PrimitiveMesh3D cube;
 
         /// \n Access a few counts
         [[nodiscard]] unsigned int GetVertexCount() const { return nVerts;}
@@ -62,14 +30,6 @@ namespace EisEngine {
         [[nodiscard]] std::vector<Vector2> GetUVs() const;
         [[nodiscard]] std::vector<Vector3> GetTangents() const;
         [[nodiscard]] std::vector<Vector3> GetBitangents() const;
-
-        // BVH raycasting [public]
-        [[nodiscard]] BVHHitResult GetBVHHit(
-                const Vector3& raySource,
-                const Vector3& rayDir,
-                BVHNode* node,
-                float& t_max
-        ) const;
     private:
         const std::vector<glm::vec3> vertices;
         const std::vector<glm::vec3> normals;
@@ -81,20 +41,7 @@ namespace EisEngine {
         /// separately from tangents.
         std::vector<glm::vec3> bitangents;
         const unsigned int nVerts;
-        const std::unique_ptr<BVHNode> primitiveRoot;
         void CalculateTangentVecs();
-
-        std::unique_ptr<BVHNode> BuildBVHTree(const int& maxTrianglesPerLeaf);
-        std::unique_ptr<BVHNode> BuildNode(std::vector<std::array<unsigned int, 3>>& triangles, const int& start, const int& end, const int& maxTrianglesPerLeaf);
-        std::array<float, 3> centroid(const std::array<unsigned int, 3>& a);
-
-        // BVH raycasting [private]
-        bool RayIntersectsWithBounds(
-                const EisEngine::Vector3 &raySource,
-                const EisEngine::Vector3 &rayDir,
-                const std::array<float, 6>& bounds,
-                float& t_max) const;
-        [[nodiscard]] BVHHitResult RayIntersectsWithTriangle(const Vector3& raySource, const Vector3& rayDir, const std::array<unsigned int, 3>& triangle) const;
     };
     } // rendering
 } // EisEngine

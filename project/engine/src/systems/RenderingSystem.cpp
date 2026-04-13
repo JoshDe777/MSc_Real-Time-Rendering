@@ -8,10 +8,6 @@
 #define MAX_LIGHTS 5
 #define DIST_THRESHOLD 10.0f
 
-// tuned by hand with some trial and error.
-const float BASE_CUT_THRESHOLD = 0.1f;
-const float CUT_FALLOFF_RATE = 0.001f;
-
 namespace EisEngine::systems {
 
 #pragma region rendering parameters
@@ -337,14 +333,6 @@ namespace EisEngine::systems {
         ApplyLightEntriesToShader(entries, activeShader);
     }
 
-    float thresholdFunc(float& LODDist){
-        auto dist = max(LODDist, Math::EPSILON);
-        auto dFactor = (float) pow(dist, 2);
-        // lowers the threshold when closer to the loaders, and increases quadratically
-        // as the distance does too.
-        return (BASE_CUT_THRESHOLD * dFactor) / (1 + CUT_FALLOFF_RATE * dFactor);
-    }
-
     void RenderingSystem::ApplyLightEntriesToShader(std::vector<ShaderLightStruct>& entries, Shader* activeShader) const{
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightCutSSBO);
 
@@ -384,10 +372,8 @@ namespace EisEngine::systems {
                 lodDist = std::min(lodDist, Vector3::Distance(objPos, pos));
             }
 
-        auto threshold = thresholdFunc(lodDist);
-
         // calculate light cuts based on LOD level & activate cuts.
-        auto results = lightSystem->ComputeLightCut(pos, threshold);
+        auto results = lightSystem->ComputeLightCut(pos, lodDist);
         std::vector<ShaderLightStruct> entries = {};
         entries.reserve(results.size());
 

@@ -4,6 +4,7 @@
 #include "engine/utilities/Vector3.h"
 #include "engine/utilities/rendering/Material.h"
 #include "engine/utilities/Bounds3D.h"
+#include "engine/components/PointLight.h"
 
 #include <utility>
 #include <vector>
@@ -13,54 +14,41 @@
 namespace EisEngine {
     class Game;
     namespace components{
-        class PointLight;
         class Mesh3D;
     }
     namespace ecs {
         class Entity;
     }
+    using Bounds3D = EisEngine::utilities::Bounds3D;
 
     namespace systems {
         /// \n A struct extended to a class used to approximate lighting by
         /// aggregating any child light clusters.
+        using PointLight = EisEngine::components::PointLight;
         class LightCluster{
-            using PointLight = EisEngine::components::PointLight;
-            using Mesh3D = EisEngine::components::Mesh3D;
-            using Bounds3D = EisEngine::utilities::Bounds3D;
         public:
             /// \n Creates a new Light Cluster.
             explicit LightCluster(
                     PointLight* representative,
                     const float& intensity,
-                    std::array<float, 6> bounds,
-                    LightCluster* parent = nullptr
+                    std::array<float, 6> bounds
                 ) :
                 representative(representative),
                 total_intensity(intensity),
-                bounding_box(bounds),
-                parent(parent) {}
+                bounding_box(bounds){
+
+            }
 
             explicit LightCluster(
                     PointLight* representative,
                     const float& intensity,
-                    Bounds3D& bounds,
-                    LightCluster* parent = nullptr
+                    Bounds3D bounds
             ) :
                     representative(representative),
                     total_intensity(intensity),
-                    bounding_box(bounds),
-                    parent(parent) {}
+                    bounding_box(bounds){
 
-            explicit LightCluster(
-                    PointLight* representative,
-                    const float& intensity,
-                    Bounds3D bounds,
-                    LightCluster* parent = nullptr
-            ) :
-                    representative(representative),
-                    total_intensity(intensity),
-                    bounding_box(bounds),
-                    parent(parent) {}
+            }
 
             [[nodiscard]] bool isLeaf() const { return left == nullptr && right == nullptr;}
 
@@ -85,40 +73,20 @@ namespace EisEngine {
 
         #pragma region parenting stuff
             /// \n Marks the passed light cluster as its child.
-            /// Automatically places the child with the highest total intensity left.
-            /// If parent cluster already has two children, it will auto-discard the previous right child.
-            void AddChild(std::unique_ptr<LightCluster>& cluster){
-                // left == nullptr -> implicit check whether any children exist.
-                if(left == nullptr){
-                    cluster->parent = this;
-                    left = std::move(cluster);
-                    return;
-                }
+            void AddChild(std::unique_ptr<LightCluster>& cluster, bool toLeft){
+                cluster->parent = this;
 
-                // check between clusters which has highest intensity
-                bool leftIsStronger = left->total_intensity >= cluster->total_intensity;
-                // if existing child is stronger, assign new cluster to right
-                if(leftIsStronger) {
-                    cluster->parent = this;
-                    right = std::move(cluster);
-                }
-                // otherwise move weaker child to right and assign new cluster to left.
-                else{
-                    right = std::move(left);
-                    cluster->parent = this;
+                if(toLeft)
                     left = std::move(cluster);
-                }
+                else
+                    right = std::move(cluster);
+
+
             }
 
             std::unique_ptr<LightCluster> DetachChild(bool _left){
-                if(_left) {
-                    // if pruning left node, reattach any right node to left
-                    // (to accommodate for AddChild logic in ordering children)
-                    auto temp = std::move(left);
-                    if(right != nullptr)
-                        left = std::move(right);
-                    return temp;
-                }
+                if(_left)
+                    return std::move(left);
                 return std::move(right);
             }
 
@@ -174,7 +142,7 @@ namespace EisEngine {
             /// (Deterministic Barnes-Hut) Replaces obsolete QueryNearbyLights
             std::vector<LightCluster*> ComputeLightCut(
                     Vector3& pos,
-                    const float& error_threshold
+                    const float& LODDist
                 );
 
             /// \n (Voxel grid) [OBSOLETE - use ComputeLightCut() instead!] Checks the surroundings of an object for effecting light sources.
@@ -191,6 +159,7 @@ namespace EisEngine {
             static constexpr float CELL_SIZE = 5.0f;
 
         private:
+            std::unordered_map<int, Vector3> lastKnownWorldPos = {};
             /// \n (Voxel grid) A reference of Point Lights by approximate position in world 3D (x, y, z) space.
             std::unordered_map<Vector3, std::vector<int>, GridCoordHashMap> LightGrid = {};
             /// \n (Voxel grid) A reverse-reference of entity IDs to their bounding voxel.
@@ -210,6 +179,11 @@ namespace EisEngine {
             void UpdateInBHTree(Entity* entity);
             void InsertEntityToGrid(const int& entityID, const Vector3& pos);
             void InsertEntityToBHTree(const int& entityID, const Vector3& pos);
+            std::unique_ptr<LightCluster> BuildBHTree();
+            std::unique_ptr<LightCluster> BuildBalancedTree(
+                    std::vector<PointLight*>& lights,
+                    int start,
+                    int end);
             /// \n (Voxel grid) Deregisters a light source from the light grid.
             void RemoveEntityFromGrid(const int& entityID);
             void RemoveClusterFromBHTree(LightCluster* cluster);

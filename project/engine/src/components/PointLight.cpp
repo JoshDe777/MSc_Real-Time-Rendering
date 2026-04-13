@@ -12,7 +12,7 @@ namespace EisEngine::components {
             Game& game, guid_t owner,
             Material* mat
     ) : Component(game, owner), mat(mat), engine(game) {
-        game.lightSystem->InsertEntityAt(owner, entity()->transform->GetGlobalPosition());
+        LightSystem::MarkLightForUpdate((int) owner);
     }
     PointLight::PointLight(EisEngine::components::PointLight &&other) noexcept : Component(other), engine(other.engine) {
         owner = other.owner;

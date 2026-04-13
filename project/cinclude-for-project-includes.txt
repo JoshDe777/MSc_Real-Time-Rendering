@@ -1,0 +1,1 @@
+perl cinclude2dot.pl --src . --include ./engine/include --exclude ".idea|cmake-build-debug|extern/" > source.dot

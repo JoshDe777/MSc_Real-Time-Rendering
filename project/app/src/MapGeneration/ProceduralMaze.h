@@ -15,7 +15,7 @@ namespace Maze::Map {
         Tile* GetTileAt(const Vector2& pos) const;
         Entity* env = nullptr;
     private:
-        void Generate(const Vector2& centre = Vector2::zero, const int& width = 32);
+        void Generate(const Vector2& centre = Vector2::zero, const int& width = 0);
         void RandomWalk(const Vector2& start,
                         std::vector<std::vector<unsigned int>>& grid,
                         std::vector<std::unique_ptr<Tile>>& map,
@@ -27,6 +27,7 @@ namespace Maze::Map {
         Entity* walls = nullptr;
         std::vector<std::unique_ptr<Tile>> map = {};
         std::vector<std::unique_ptr<Torch>> torches = {};
+        int mazeWidth = 16;
 
         float wallSize = 3.0f;
     };

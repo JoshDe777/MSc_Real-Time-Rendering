@@ -6,6 +6,7 @@ namespace Maze {
     class Steve {
     public:
         explicit Steve(Game& game);
+        void BringBackToStart() const;
         void Animate();
         Entity* entity = nullptr;
     private:

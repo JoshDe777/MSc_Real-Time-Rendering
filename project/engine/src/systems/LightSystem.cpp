@@ -18,9 +18,9 @@ namespace EisEngine::systems {
     }
 
 // tuned by hand with some trial and error.
-    const float ERROR_STEEPNESS = 0.075f;
-    const float ERROR_STRETCH = 0.001f;
-    const float BASE_THRESHOLD = 0.1f;
+    float LightSystem::ERROR_STEEPNESS = 0.075f;
+    float LightSystem::ERROR_STRETCH = 0.001f;
+    float LightSystem::BASE_THRESHOLD = 0.1f;
 #pragma endregion
 
     std::vector<unsigned int> LightSystem::lightsToUpdate = {};
@@ -203,11 +203,11 @@ namespace EisEngine::systems {
 #pragma endregion
 
 #pragma region barnes-hut stuff
-    float threshold1D(const float& dist){
-        return (ERROR_STEEPNESS * pow(dist, 2)) / (1 + ERROR_STRETCH * pow(dist, 2));
+    float LightSystem::threshold1D(const float& dist){
+        return (float) (ERROR_STEEPNESS * pow(dist, 2.0f)) / (1 + ERROR_STRETCH * pow(dist, 2));
     }
 
-    float thresholdFunc(const float& lodDist, const float& clusterDist){
+    float LightSystem::thresholdFunc(const float& lodDist, const float& clusterDist){
         return BASE_THRESHOLD + threshold1D(lodDist) + threshold1D(clusterDist);
     }
 
@@ -287,7 +287,7 @@ namespace EisEngine::systems {
             q.push({node->right.get(), rErr});
         }
 
-        DEBUG_LOG("Computed light cut containing " + std::to_string(results.size()) + " clusters, having explored " + std::to_string(counter) + " clusters.")
+        //DEBUG_LOG("Computed light cut containing " + std::to_string(results.size()) + " clusters, having explored " + std::to_string(counter) + " clusters.")
 
         // return list of valid clusters for the light cut.
         return results;

@@ -15,10 +15,15 @@ class MinotaursMaze : public Game {
 public:
     explicit MinotaursMaze();
 private:
-    static void DisplayUI();
+    void DisplayUI();
 
     shared_ptr<Steve> steve = nullptr;
     shared_ptr<CamController> controller = nullptr;
     shared_ptr<ProceduralMaze> maze = nullptr;
     shared_ptr<Minotaur> minotaur = nullptr;
+
+    bool voxelRendering = false;
+    float base_TH = 0.1f;
+    float steepness = 0.06f;
+    float stretch = 0.001f;
 };

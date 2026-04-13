@@ -158,6 +158,9 @@ namespace EisEngine {
             /// \n (Voxel grid) 3D cell size for light source voxel storage; (CELL_SIZE x CELL_SIZE x CELL_SIZE).
             static constexpr float CELL_SIZE = 5.0f;
 
+            static void SetBaseBHThreshold(const float& val) { BASE_THRESHOLD = val;}
+            static void SetBHThresholdSteepness(const float& val) { ERROR_STEEPNESS = val;}
+            static void SetBHThresholdStretch(const float& val) { ERROR_STRETCH = val;}
         private:
             std::unordered_map<int, Vector3> lastKnownWorldPos = {};
             /// \n (Voxel grid) A reference of Point Lights by approximate position in world 3D (x, y, z) space.
@@ -188,8 +191,15 @@ namespace EisEngine {
             void RemoveEntityFromGrid(const int& entityID);
             void RemoveClusterFromBHTree(LightCluster* cluster);
 
+            static float threshold1D(const float& dist);
+            static float thresholdFunc(const float& lodDist, const float& clusterDist);
+
             /// \n (Voxel grid) A static reference list of entities whose light sources might need an updated voxel placement.
             static std::vector<unsigned int> lightsToUpdate;
+
+            static float ERROR_STEEPNESS;
+            static float ERROR_STRETCH;
+            static float BASE_THRESHOLD;
         };
     }
 }

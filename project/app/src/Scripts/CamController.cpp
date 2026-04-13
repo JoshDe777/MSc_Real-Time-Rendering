@@ -98,11 +98,7 @@ namespace Maze {
         }
         else if (Input::GetKeyDown(KeyCode::V)){
             if (isPerspective) {
-                camera->transform->SetGlobalPosition(Vector3(0, 99, 0));
-                camera->transform->SetLocalRotation(Vector3(-90, 0, 0));
-                camera->SetCameraMode(CameraMode::ORTHO);
-                camera->SetZoom(-100);
-                isPerspective = false;
+                GoToTopDown();
             }
             else {
                 camera->transform->SetGlobalPosition(Vector3(0, 1, 0));
@@ -132,5 +128,13 @@ namespace Maze {
 
             camera->transform->SetLocalRotation(baseRotation + Vector3(xRotation, yRotation, 0));
         }
+    }
+
+    void CamController::GoToTopDown() {
+        camera->transform->SetGlobalPosition(Vector3(0, 99, 0));
+        camera->transform->SetLocalRotation(Vector3(-90, 0, 0));
+        camera->SetCameraMode(CameraMode::ORTHO);
+        camera->SetZoom(-100);
+        isPerspective = false;
     }
 }

@@ -263,7 +263,7 @@ namespace Maze::Map {
         walls = game.entityManager->createEntity("Maze Walls");
         walls->transform->SetParent(env->transform);
 
-        Generate();
+        Generate(Vector2::zero, mazeWidth);
     }
 
     void ProceduralMaze::Generate(const Vector2& centre, const int& width) {

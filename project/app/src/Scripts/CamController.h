@@ -8,6 +8,7 @@ namespace Maze {
     public:
         explicit CamController(Game& game, Entity* minotaur, Entity* steve);
         event_t onFocusHold;
+        void GoToTopDown();
     private:
         void Update(Game& game);
 

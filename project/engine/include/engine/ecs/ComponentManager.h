@@ -108,6 +108,9 @@ namespace EisEngine {
             /// \n determines whether there is an existing component of the given type.
             template<typename C>
             bool hasComponentOfType() { return containers.count(typeid(C).hash_code()) != 0;}
+
+            template<typename C>
+            int countComponentsOfType() { return containers[typeid(C).hash_code()].size();}
         private:
             using ComponentContainer = std::map<guid_t, std::unique_ptr<Component>>;
 

@@ -105,4 +105,8 @@ namespace Maze {
 
         entity->transform->Translate(torso->transform->Forward() * moveSpeed * Time::deltaTime);
     }
+
+    void Steve::BringBackToStart() const {
+        entity->transform->SetGlobalPosition(Vector3(0, 5, 0));
+    }
 }

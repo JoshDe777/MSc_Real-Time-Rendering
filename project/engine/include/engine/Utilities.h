@@ -9,6 +9,7 @@
 
 #include "engine/utilities/Vector2.h"
 #include "engine/utilities/Vector3.h"
+#include "engine/utilities/Quaternion.h"
 
 #include "engine/utilities/DebugLine.h"
 #include "engine/utilities/Bounds2D.h"
@@ -20,6 +21,7 @@
 
 using Vector2 = EisEngine::Vector2;
 using Vector3 = EisEngine::Vector3;
+using Quaternion = EisEngine::Quaternion;
 using Color = EisEngine::Color;
 using DebugLine = EisEngine::DebugLine;
 using Bounds2D = EisEngine::Bounds2D;

@@ -61,14 +61,20 @@ namespace EisEngine{
 
             /// \n Sets transform position in world space.
             void SetGlobalPosition(const Vector3& pos);
-            /// \n Sets transform rotation in world space.
+            /// \n Sets transform rotation [degrees] in world space.
             void SetGlobalRotation(const Vector3& rotation);
+            /// \n Variant of SetGlobalRotation which-hard sets the Euler values.\n
+            /// DO NOT USE IN REAL APPLICATIONS THIS WAS DESIGNED TO IMPLEMENT GIMBAL LOCK!
+            void SetGlobalEulerRotation(const Vector3& rotation);
             /// \n Sets transform scale in world space.
             void SetGlobalScale(const Vector3& scale);
             /// \n Sets transform position relative to its parent object.
             void SetLocalPosition(const Vector3& pos);
-            /// \n Sets transform rotation relative to its parent object.
+            /// \n Sets transform rotation [degrees] relative to its parent object.
             void SetLocalRotation(const Vector3& rotation);
+            /// \n Variant of SetLocalRotation which-hard sets the Euler values.\n
+            /// DO NOT USE IN REAL APPLICATIONS THIS WAS DESIGNED TO IMPLEMENT GIMBAL LOCK!
+            void SetLocalEulerRotation(const Vector3& rotation);
             /// \n Sets transform scale relative to its parent object.
             void SetLocalScale(const Vector3& scale);
 

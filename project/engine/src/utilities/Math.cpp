@@ -45,5 +45,11 @@ namespace EisEngine {
         return result;
     }
 
+    // function from aioobe's answer to the linked question on StackOverflow
+    // link: (https://stackoverflow.com/questions/4353525/floating-point-linear-interpolation)
+    float Math::Lerp(const float &start, const float &end, const float &t) {
+        return start * (1.0f - t) + (end * t);
+    }
+
     float Math::Sqrt(const float &val) { return std::sqrt(val);}
 }

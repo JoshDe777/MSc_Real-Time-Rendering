@@ -65,6 +65,14 @@ namespace EisEngine {
                 }
             }
 
+            /// \n Counts the amount of components of a given type.
+            template<typename C>
+            unsigned int countComponentsOfType(){
+                if(!hasComponentOfType<C>())
+                    return 0;
+                return containers.at(typeid(C).hash_code()).size();
+            }
+
 
             /// \n Removes a Component from the given entity.
             /// @param entityID - the unique ID of the entity whose component is to be removed.

@@ -64,8 +64,10 @@ namespace EisEngine {
         /// \n A Vector3 constant with values (0, 0, -1), representing the positive z direction in world space.
         static const Vector3 forward;
 
-        /// \n Rotates the vector by the given vector in degrees.
+        /// \n Rotates the vector by the given vector in degrees.\n
+        /// [DEPRECATED! USES EULER!!!].
         [[nodiscard]] Vector3 Rotate(const Vector3& rotationAngles) const;
+        [[nodiscard]] Vector3 Rotate(const Quaternion& q) const;
 
         operator Vector2() const;
         operator Quaternion() const;

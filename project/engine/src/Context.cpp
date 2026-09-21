@@ -7,6 +7,8 @@
 #include "engine/utilities/Debug.h"
 
 namespace EisEngine::ctx {
+    Color Context::m_clearColor = Color::black;
+
     void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height);}
 
     void Context::InitializeGLFW() {
@@ -126,7 +128,7 @@ namespace EisEngine::ctx {
     void Context::run(const Context::Callback& update) {
         glfwSetTime(1.0 / 60);
         while(!glfwWindowShouldClose(window)) {
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+            glClearColor(m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             update(*this);
             glfwPollEvents();

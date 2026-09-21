@@ -36,12 +36,15 @@ namespace EisEngine {
         /// \n The r value of this quaternion
         float r;
 
+        Vector3 ToEulerXYZ() const;
+
         operator Vector3() const;
         operator Vector2() const;
         operator std::string() const;
 
         Quaternion operator+(Quaternion const &q) const;
         Quaternion operator-(Quaternion const &q) const;
+        Quaternion operator-() const;
         Quaternion operator*(Quaternion const &q) const;
         Quaternion operator*(float const& c) const;
         Quaternion operator*(int const& c) const;
@@ -60,9 +63,13 @@ namespace EisEngine {
         float magnitude() const;
 
         /// The quaternion normalized to have the sum of its members squared be 1.
-        Quaternion normalized() { return (*this * (1/this->magnitude()));}
+        Quaternion normalized() const { return (*this * (1/this->magnitude()));}
 
         /// The conjugated value of this quaternion.
-        Quaternion conjugated() { return Quaternion(r, -x, -y, -z);}
+        Quaternion conjugated() const { return Quaternion(-x, -y, -z, r);}
+
+        static float Dot(const Quaternion& q1, const Quaternion& q2);
+        static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, const float& val);
+        static Quaternion GetRotationToTarget(const Vector3& origin, const Vector3& target);
     };
 }

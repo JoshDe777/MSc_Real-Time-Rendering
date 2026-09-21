@@ -26,7 +26,7 @@ namespace EisEngine {
         /// @param roughness - float: The inverse surface uniformity - the rougher the surface, the noisier the lighting effects.\n
         ///     Defaults to 0.5 (semi-matte)
         explicit Material(
-                std::string  name,
+                std::string name = "Material",
                 const Vector3& diffuse = Vector3(1, 1, 1),
                 const Vector3& emission = Vector3::zero,
                 const float& opacity = 1,

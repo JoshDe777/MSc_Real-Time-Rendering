@@ -35,7 +35,7 @@ namespace EisEngine::components{
         void SetPoints(const Vector3& start, const Vector3& end);
 
         /// \n draws the line onto the screen once per frame.
-        void draw() const;
+        void draw(const unsigned int& shaderProgram) const;
     private:
         /// \n Updates the GL buffer data to current points values
         void UpdateBufferData();

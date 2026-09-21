@@ -19,6 +19,7 @@ namespace EisEngine {
         shader.setFloat("tiling", tiling);
         shader.setFloat("metallic", metallic);
         shader.setFloat("roughness", roughness);
+        //DEBUG_OPENGL("Material " + name)
     }
 
     void Material::Print() {

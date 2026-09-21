@@ -20,7 +20,6 @@ namespace EisEngine::systems{
             if(!transform.IsDirty())
                 return;
 
-            glm::mat4 oldMatrix = transform.modelMatrix;
             transform.modelMatrix = calculateModelMatrix(transform);
         });
     }
